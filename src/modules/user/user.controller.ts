@@ -4,8 +4,6 @@ import { startSession } from 'mongoose';
 import userService from './user.service';
 import authService from '../auth/auth.service';
 import passwordHashUtil from '../../util/passwordHash.util';
-import roleService from '../common/service/role.service';
-import commonService from '../common/service/common.service';
 
 import User from './user.model';
 import Auth from '../auth/auth.model';
@@ -66,11 +64,11 @@ const saveUser = async (req: Request, res: Response) => {
         throw new BadRequestError(error);
     }
 
-    const roleData = await roleService.findByCustomId(role);
-    const genderData = await commonService.findGenderByCustomId(gender);
+    // const roleData = await roleService.findByCustomId(role);
+    // const genderData = await commonService.findGenderByCustomId(gender);
 
-    if (!roleData) throw new BadRequestError('Valid Role is required!');
-    if (!genderData) throw new BadRequestError('Valid Gender is required!');
+    // if (!roleData) throw new BadRequestError('Valid Role is required!');
+    // if (!genderData) throw new BadRequestError('Valid Gender is required!');
 
     // create user
     let createdUser = null;
@@ -85,7 +83,7 @@ const saveUser = async (req: Request, res: Response) => {
         const user = new User({
             fullName,
             userName,
-            gender: genderData._id,
+            // gender: genderData._id,
             dateOfBirth,
             address,
             phoneNumber1,
@@ -107,7 +105,7 @@ const saveUser = async (req: Request, res: Response) => {
             basicSalary,
             leaveCount,
             languages,
-            role: roleData._id,
+            // role: roleData._id,
             createdBy: userAuth?.id,
             updatedBy: userAuth?.id,
         });
@@ -119,7 +117,7 @@ const saveUser = async (req: Request, res: Response) => {
             userName,
             password: hashedPassword,
             user: user._id,
-            role: roleData._id,
+            // role: roleData._id,
             createdBy: userAuth?.id,
             updatedBy: userAuth?.id,
         });
@@ -210,11 +208,11 @@ const updateUser = async (req: Request, res: Response) => {
         throw new BadRequestError(error);
     }
 
-    const roleData = await roleService.findByCustomId(role);
-    const genderData = await commonService.findGenderByCustomId(gender);
+    // const roleData = await roleService.findByCustomId(role);
+    // const genderData = await commonService.findGenderByCustomId(gender);
 
-    if (!roleData) throw new BadRequestError('Valid Role is required!');
-    if (!genderData) throw new BadRequestError('Valid Gender is required!');
+    // if (!roleData) throw new BadRequestError('Valid Role is required!');
+    // if (!genderData) throw new BadRequestError('Valid Gender is required!');
 
     // create user
     let createdUser = null;
@@ -231,7 +229,7 @@ const updateUser = async (req: Request, res: Response) => {
 
         user.fullName = fullName;
         user.userName = userName;
-        user.gender = genderData._id;
+        // user.gender = genderData._id;
         user.dateOfBirth = dateOfBirth;
         user.address = address;
         user.phoneNumber1 = phoneNumber1;
@@ -253,7 +251,7 @@ const updateUser = async (req: Request, res: Response) => {
         user.basicSalary = basicSalary;
         user.leaveCount = leaveCount;
         user.languages = languages;
-        user.role = roleData._id;
+        // user.role = roleData._id;
         user.updatedBy = userAuth?.id;
 
         createdUser = await userService.Save(user, session);
@@ -263,7 +261,7 @@ const updateUser = async (req: Request, res: Response) => {
         if (!auth) throw new BadRequestError('User not found!');
 
         auth.userName = userName;
-        auth.role = roleData._id;
+        // auth.role = roleData._id;
         auth.updatedBy = userAuth?.id;
 
         await authService.save(auth, session);
@@ -473,16 +471,14 @@ const deleteUser = async (req: Request, res: Response) => {
 };
 
 const getAllUsersByRole = async (req: Request, res: Response) => {
-    const userAuth: any = req.auth;
-    const roleId = req.params.id;
-
-    const role: any = await roleService.findByCustomId(roleId);
-
-    let users: any[] = [];
-    if (role) {
-        users = await userService.findAllByRoleId(role?._id);
-    }
-    CommonResponse(res, true, StatusCodes.OK, '', users);
+    // const userAuth: any = req.auth;
+    // const roleId = req.params.id;
+    // const role: any = await roleService.findByCustomId(roleId);
+    // let users: any[] = [];
+    // if (role) {
+    //     users = await userService.findAllByRoleId(role?._id);
+    // }
+    // CommonResponse(res, true, StatusCodes.OK, '', users);
 };
 
 export {
