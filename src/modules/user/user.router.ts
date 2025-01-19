@@ -1,15 +1,14 @@
 import { Router } from 'express';
 import applicationRoutes from '../../applicationRoutes';
 import {
-    blockUser,
+    blacklistUser,
     getAllUsers,
     getUserById,
     saveUser,
-    unblockUser,
+    whitelistUser,
     updateUser,
-    checkUserName,
     deleteUser,
-    getAllUsersByRole,
+    getNewCustomerCode,
 } from './user.controller';
 import authMiddleware from '../../middleware/auth.middleware';
 import constants from '../../constant';
@@ -18,37 +17,47 @@ const UserRouter = Router();
 
 UserRouter.post(
     applicationRoutes.user.save,
-    authMiddleware.authorize([constants.USER.ROLES.SUPERADMIN]),
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
     saveUser
 );
 
 UserRouter.put(
     applicationRoutes.user.update,
-    authMiddleware.authorize([constants.USER.ROLES.SUPERADMIN]),
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
     updateUser
 );
 
 UserRouter.put(
-    applicationRoutes.user.blockUser,
-    authMiddleware.authorize([constants.USER.ROLES.SUPERADMIN]),
-    blockUser
+    applicationRoutes.user.blacklistUser,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    blacklistUser
 );
 
 UserRouter.put(
-    applicationRoutes.user.unblockUser,
-    authMiddleware.authorize([constants.USER.ROLES.SUPERADMIN]),
-    unblockUser
-);
-
-UserRouter.get(
-    applicationRoutes.user.validateUser,
-    authMiddleware.authorize([constants.USER.ROLES.SUPERADMIN]),
-    checkUserName
+    applicationRoutes.user.whitelistUser,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    whitelistUser
 );
 
 UserRouter.get(
     applicationRoutes.user.getAll,
-    authMiddleware.authorize([constants.USER.ROLES.SUPERADMIN]),
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        ,
+        constants.USER.ROLES.ADMIN,
+    ]),
     getAllUsers
 );
 
@@ -60,18 +69,21 @@ UserRouter.get(
 
 UserRouter.delete(
     applicationRoutes.user.deleteById,
-    authMiddleware.authorize([constants.USER.ROLES.SUPERADMIN]),
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        ,
+        constants.USER.ROLES.ADMIN,
+    ]),
     deleteUser
 );
 
 UserRouter.get(
-    applicationRoutes.user.getUsersByRole,
+    applicationRoutes.user.getCustomerCode,
     authMiddleware.authorize([
         constants.USER.ROLES.SUPERADMIN,
         constants.USER.ROLES.ADMIN,
-        constants.USER.ROLES.TRIPMANAGER,
     ]),
-    getAllUsersByRole
+    getNewCustomerCode
 );
 
 export default UserRouter;

@@ -11,8 +11,7 @@ const userSchema = new mongoose.Schema(
         },
 
         customerCode: {
-            type: String,
-            maxlength: [20, 'Customer Code cannot be more than 20 characters'],
+            type: Number,
         },
 
         titleId: {
@@ -32,7 +31,7 @@ const userSchema = new mongoose.Schema(
             required: [true, 'Full Name is required'],
         },
 
-        Initial: {
+        initial: {
             type: String,
             maxlength: [50, 'Initial cannot be more than 50 characters'],
             required: [true, 'Initial is required'],
@@ -115,6 +114,7 @@ const userSchema = new mongoose.Schema(
                 },
                 message: (props: any) => `${props.value} is not a valid email`,
             },
+            default: null,
         },
 
         addresses: [
@@ -261,38 +261,36 @@ const userSchema = new mongoose.Schema(
                         ],
                     },
 
-                    totalIncomeamount: {
+                    amount: {
                         type: Number,
                     },
                 },
             ],
 
-            totalExpenses: {
+            totalIncome: {
                 type: Number,
             },
         },
 
         // Identity Information
-        nic: {
-            type: String,
-            maxlength: [20, 'NIC cannot be more than 20 characters'],
-            required: [true, 'NIC is required'],
-        },
-
         nicImageUrl: {
             type: String,
+            default: null,
         },
 
         drivingLicenseUrl: {
             type: String,
+            default: null,
         },
 
         businessRegistrationUrl: {
             type: String,
+            default: null,
         },
 
         profileImageUrl: {
             type: String,
+            default: null,
         },
 
         // Bank Account Information

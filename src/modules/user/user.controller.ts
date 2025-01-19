@@ -15,116 +15,169 @@ import { StatusCodes } from 'http-status-codes';
 import UserResponseDto from './dto/userResponseDto';
 import NotFoundError from '../../error/NotFoundError';
 import { WellKnownStatus } from '../../util/enums/well-known-status.enum';
+import constants from '../../constant';
+import { WellKnownUserStatus } from '../../util/enums/well-known-user-status.enum';
+import helperUtil from '../../util/helper.util';
 
 const saveUser = async (req: Request, res: Response) => {
     const {
+        nicNumber,
+        titleId,
+        title,
         fullName,
-        userName,
-        gender,
+        initial,
+        firstName,
+        lastName,
         dateOfBirth,
-        address,
-        phoneNumber1,
-        phoneNumber2,
+        age,
+        genderId,
+        gender,
+        civilStatusId,
+        civilStatus,
+        occupation,
+        mobileNo1,
+        mobileNo2,
+        residenceNo,
         email,
-        profileImageUrl,
-        nic,
+        addresses,
+        spouseDetails,
+        familyInfos,
+        expensesDetails,
+        incomeDetails,
         nicImageUrl,
-        gsCertificateUrl,
         drivingLicenseUrl,
-        sltdaCertificateUrl,
-        policeReportUrl,
+        businessRegistrationUrl,
+        profileImageUrl,
         bankName,
         bankId,
         branch,
         accountNumber,
-        accountHolderName,
-        accountHolderAddress,
-        basicSalary,
-        leaveCount,
-        languages,
         role,
+        specialNote,
     } = req.body;
     const userAuth: any = req.auth;
+    //check Validations
+    // If role is customer check nic and if admin check email
 
-    // validate userName
-    const existingUsers = await userService.validateUserData(1, userName);
-    const existingEmails = await userService.validateUserData(2, email);
-    const existingNics = await userService.validateUserData(3, nic);
+    if (
+        role === constants.USER.ROLES.ADMIN ||
+        role === constants.USER.ROLES.SUPERADMIN
+    ) {
+        const isEmailExists = await userService.findByNicOrEmail(email, '');
 
-    let error = '';
-    if (existingUsers.length > 0) {
-        error = 'User Name already exists!';
-    } else if (existingEmails.length > 0) {
-        error = 'Email already exists!';
-    } else if (existingNics.length > 0) {
-        error = 'NIC already exists!';
+        if (isEmailExists) {
+            throw new BadRequestError(
+                'An admin account with this email already exists. Please use a different email!'
+            );
+        }
+    } else if (role === constants.USER.ROLES.CUSTOMER) {
+        const isNicExists = await userService.findByNicOrEmail('', nicNumber);
+
+        if (isNicExists) {
+            throw new BadRequestError(
+                'A customer account with this NIC already exists. Please use a different NIC!'
+            );
+        }
     }
 
-    if (error) {
-        throw new BadRequestError(error);
-    }
-
-    // const roleData = await roleService.findByCustomId(role);
-    // const genderData = await commonService.findGenderByCustomId(gender);
-
-    // if (!roleData) throw new BadRequestError('Valid Role is required!');
-    // if (!genderData) throw new BadRequestError('Valid Gender is required!');
-
-    // create user
     let createdUser = null;
-
     const session = await startSession();
-
     try {
         //start transaction in session
         session.startTransaction();
 
-        // create user
-        const user = new User({
-            fullName,
-            userName,
-            // gender: genderData._id,
-            dateOfBirth,
-            address,
-            phoneNumber1,
-            phoneNumber2,
-            email,
-            profileImageUrl,
-            nic,
-            nicImageUrl,
-            gsCertificateUrl,
-            drivingLicenseUrl,
-            sltdaCertificateUrl,
-            policeReportUrl,
-            bankName,
-            bankId,
-            branch,
-            accountNumber,
-            accountHolderName,
-            accountHolderAddress,
-            basicSalary,
-            leaveCount,
-            languages,
-            // role: roleData._id,
-            createdBy: userAuth?.id,
-            updatedBy: userAuth?.id,
-        });
+        //get next code
+        const nextCode = await userService.getNextCustomerAdminCode(role);
 
-        // Create Auth
-        const hashedPassword = await passwordHashUtil.hashPassword('12345');
+        // Arrange expensesDetails
+        let expensesDetailsObj: any = null;
 
-        const auth = new Auth({
-            userName,
-            password: hashedPassword,
-            user: user._id,
-            // role: roleData._id,
-            createdBy: userAuth?.id,
-            updatedBy: userAuth?.id,
+        if (expensesDetails?.expenses?.length > 0) {
+            expensesDetailsObj = {
+                expenses: expensesDetails.expenses,
+                totalExpenses:
+                    expensesDetails.expenses.reduce(
+                        (total: number, expense: any) => total + expense.amount,
+                        0
+                    ) || 0,
+            };
+        }
+
+        // Arrange incomeDetails
+        let incomeDetailsObj: any = null;
+
+        if (incomeDetails?.incomes?.length > 0) {
+            incomeDetailsObj = {
+                incomes: incomeDetails.incomes,
+                totalIncome:
+                    incomeDetails.incomes.reduce(
+                        (total: number, income: any) => total + income.amount,
+                        0
+                    ) || 0,
+            };
+        }
+
+        // create user only if role is customer
+        let user = new User({
+            nicNumber: nicNumber,
+            customerCode: nextCode,
+            titleId: titleId,
+            title: title,
+            fullName: fullName,
+            initial: initial,
+            firstName: firstName,
+            lastName: lastName,
+            dateOfBirth: dateOfBirth,
+            age: age,
+            genderId: genderId,
+            gender: gender,
+            civilStatusId: civilStatusId,
+            civilStatus: civilStatus,
+            occupation: occupation,
+            mobileNo1: mobileNo1,
+            mobileNo2: mobileNo2,
+            residenceNo: residenceNo,
+            email: email,
+            spouseDetails: spouseDetails,
+            addresses: addresses?.length > 0 ? addresses : [],
+            familyInfos: familyInfos?.length > 0 ? familyInfos : [],
+            expensesDetails: expensesDetailsObj,
+            incomeDetails: incomeDetailsObj,
+            nicImageUrl: nicImageUrl,
+            drivingLicenseUrl: drivingLicenseUrl,
+            businessRegistrationUrl: businessRegistrationUrl,
+            profileImageUrl: profileImageUrl,
+            bankName: bankName,
+            bankId: bankId,
+            branch: branch,
+            accountNumber: accountNumber,
+            role: role,
+            specialNote: specialNote,
+            createdBy: userAuth.id,
+            updatedBy: userAuth.id,
         });
 
         createdUser = await userService.Save(user, session);
 
-        await authService.save(auth, session);
+        // create user and auth objects if role is admin
+        if (
+            role === constants.USER.ROLES.ADMIN ||
+            role === constants.USER.ROLES.SUPERADMIN
+        ) {
+            // Create Auth
+            const hashedPassword = await passwordHashUtil.hashPassword('12345');
+
+            const auth = new Auth({
+                email,
+                password: hashedPassword,
+                user: user._id,
+                role: role,
+                createdBy: userAuth?.id,
+                updatedBy: userAuth?.id,
+            });
+
+            await authService.save(auth, session);
+        }
 
         //commit transaction
         await session.commitTransaction();
@@ -137,11 +190,13 @@ const saveUser = async (req: Request, res: Response) => {
         session.endSession();
     }
 
+    let roleName = helperUtil.getRoleName(role);
+
     CommonResponse(
         res,
         true,
         StatusCodes.CREATED,
-        'User created successfully!',
+        `${roleName} created successfully!`,
         createdUser
     );
 };
@@ -151,68 +206,79 @@ const updateUser = async (req: Request, res: Response) => {
     const userId = req.params.id;
     const userAuth: any = req.auth;
     const {
+        nicNumber,
+        titleId,
+        title,
         fullName,
-        userName,
-        gender,
+        initial,
+        firstName,
+        lastName,
         dateOfBirth,
-        address,
-        phoneNumber1,
-        phoneNumber2,
+        age,
+        genderId,
+        gender,
+        civilStatusId,
+        civilStatus,
+        occupation,
+        mobileNo1,
+        mobileNo2,
+        residenceNo,
         email,
-        profileImageUrl,
-        nic,
+        addresses,
+        spouseDetails,
+        familyInfos,
+        expensesDetails,
+        incomeDetails,
         nicImageUrl,
-        gsCertificateUrl,
         drivingLicenseUrl,
-        sltdaCertificateUrl,
-        policeReportUrl,
+        businessRegistrationUrl,
+        profileImageUrl,
         bankName,
         bankId,
         branch,
         accountNumber,
-        accountHolderName,
-        accountHolderAddress,
-        basicSalary,
-        leaveCount,
-        languages,
-        role,
+        specialNote,
     } = req.body;
 
-    // validate userName
-    const existingUsers = await userService.validateUserDataForUpdate(
-        1,
-        userName,
-        userId
-    );
-    const existingEmails = await userService.validateUserDataForUpdate(
-        2,
-        email,
-        userId
-    );
-    const existingNics = await userService.validateUserDataForUpdate(
-        3,
-        nic,
-        userId
-    );
+    // validate email and nicNumber
+    let user = await userService.findByIdAndStatusIn(userId, [
+        WellKnownUserStatus.ACTIVE,
+        WellKnownUserStatus.BLACKLISTED,
+    ]);
+
+    if (!user) {
+        throw new NotFoundError('User not found or already deleted!');
+    }
 
     let error = '';
-    if (existingUsers.length > 0) {
-        error = 'User Name already exists!';
-    } else if (existingEmails.length > 0) {
-        error = 'Email already exists!';
-    } else if (existingNics.length > 0) {
-        error = 'NIC already exists!';
+    if (
+        user.role === constants.USER.ROLES.ADMIN &&
+        userAuth.role === constants.USER.ROLES.SUPERADMIN
+    ) {
+        const existingEmails = await userService.validateUserDataForUpdate(
+            2,
+            email,
+            userId
+        );
+
+        if (existingEmails.length > 0) {
+            error = 'Email already exists!';
+        }
+    } else if (user.role === constants.USER.ROLES.CUSTOMER) {
+        const existingNics = await userService.validateUserDataForUpdate(
+            1,
+            nicNumber,
+            userId
+        );
+
+        if (existingNics.length > 0) {
+            error = 'NIC already exists!';
+        }
     }
 
     if (error) {
         throw new BadRequestError(error);
     }
-
-    // const roleData = await roleService.findByCustomId(role);
-    // const genderData = await commonService.findGenderByCustomId(gender);
-
-    // if (!roleData) throw new BadRequestError('Valid Role is required!');
-    // if (!genderData) throw new BadRequestError('Valid Gender is required!');
 
     // create user
     let createdUser = null;
@@ -223,48 +289,84 @@ const updateUser = async (req: Request, res: Response) => {
         //start transaction in session
         session.startTransaction();
 
-        let user = await userService.findById(userId);
+        // Arrange expensesDetails
+        let expensesDetailsObj: any = null;
 
-        if (!user) throw new NotFoundError('User not found!');
+        if (expensesDetails?.expenses?.length > 0) {
+            expensesDetailsObj = {
+                expenses: expensesDetails.expenses,
+                totalExpenses:
+                    expensesDetails.expenses.reduce(
+                        (total: number, expense: any) => total + expense.amount,
+                        0
+                    ) || 0,
+            };
+        }
 
+        // Arrange incomeDetails
+        let incomeDetailsObj: any = null;
+
+        if (incomeDetails?.incomes?.length > 0) {
+            incomeDetailsObj = {
+                incomes: incomeDetails.incomes,
+                totalIncome:
+                    incomeDetails.incomes.reduce(
+                        (total: number, income: any) => total + income.amount,
+                        0
+                    ) || 0,
+            };
+        }
+
+        user.nicNumber = nicNumber;
+        user.titleId = titleId;
+        user.title = title;
         user.fullName = fullName;
-        user.userName = userName;
-        // user.gender = genderData._id;
+        user.initial = initial;
+        user.firstName = firstName;
+        user.lastName = lastName;
         user.dateOfBirth = dateOfBirth;
-        user.address = address;
-        user.phoneNumber1 = phoneNumber1;
-        user.phoneNumber2 = phoneNumber2;
+        user.age = age;
+        user.genderId = genderId;
+        user.gender = gender;
+        user.civilStatusId = civilStatusId;
+        user.civilStatus = civilStatus;
+        user.occupation = occupation;
+        user.mobileNo1 = mobileNo1;
+        user.mobileNo2 = mobileNo2;
+        user.residenceNo = residenceNo;
         user.email = email;
-        user.profileImageUrl = profileImageUrl;
-        user.nic = nic;
+        user.addresses = addresses;
+        user.spouseDetails = spouseDetails;
+        user.familyInfos = familyInfos;
+        user.expensesDetails = expensesDetailsObj;
+        user.incomeDetails = incomeDetailsObj;
         user.nicImageUrl = nicImageUrl;
-        user.gsCertificateUrl = gsCertificateUrl;
         user.drivingLicenseUrl = drivingLicenseUrl;
-        user.sltdaCertificateUrl = sltdaCertificateUrl;
-        user.policeReportUrl = policeReportUrl;
+        user.businessRegistrationUrl = businessRegistrationUrl;
+        user.profileImageUrl = profileImageUrl;
         user.bankName = bankName;
         user.bankId = bankId;
         user.branch = branch;
         user.accountNumber = accountNumber;
-        user.accountHolderName = accountHolderName;
-        user.accountHolderAddress = accountHolderAddress;
-        user.basicSalary = basicSalary;
-        user.leaveCount = leaveCount;
-        user.languages = languages;
-        // user.role = roleData._id;
+        user.specialNote = specialNote;
         user.updatedBy = userAuth?.id;
 
         createdUser = await userService.Save(user, session);
 
-        let auth = await authService.findByUserId(userId);
+        // if admin superadmin update user and auth
+        if (
+            user.role === constants.USER.ROLES.ADMIN ||
+            user.role === constants.USER.ROLES.SUPERADMIN
+        ) {
+            let auth = await authService.findByUserId(userId);
 
-        if (!auth) throw new BadRequestError('User not found!');
+            if (!auth) throw new BadRequestError('User not found!');
 
-        auth.userName = userName;
-        // auth.role = roleData._id;
-        auth.updatedBy = userAuth?.id;
+            auth.email = email;
+            auth.updatedBy = userAuth?.id;
 
-        await authService.save(auth, session);
+            await authService.save(auth, session);
+        }
 
         //commit transaction
         await session.commitTransaction();
@@ -287,152 +389,18 @@ const updateUser = async (req: Request, res: Response) => {
 };
 
 // block user by user id
-const blockUser = async (req: Request, res: Response) => {
+const blacklistUser = async (req: Request, res: Response) => {
     const userId = req.params.id;
     const userAuth: any = req.auth;
 
-    let auth = await authService.findByUserId(userId);
+    let user = await userService.findByIdAndStatusIn(userId, [
+        WellKnownUserStatus.ACTIVE,
+        WellKnownUserStatus.BLACKLISTED,
+    ]);
 
-    if (!auth) throw new NotFoundError('User not found!');
-
-    if (auth.isBlocked) throw new BadRequestError('User already blocked!');
-
-    auth.isBlocked = true;
-    auth.updatedBy = userAuth.id;
-
-    await authService.save(auth, null);
-
-    CommonResponse(
-        res,
-        true,
-        StatusCodes.OK,
-        'User blocked successfully!',
-        null
-    );
-};
-
-// unblock user by user id
-const unblockUser = async (req: Request, res: Response) => {
-    const userId = req.params.id;
-    const userAuth: any = req.auth;
-
-    let auth = await authService.findByUserId(userId);
-
-    if (!auth) throw new NotFoundError('User not found!');
-
-    if (!auth.isBlocked) throw new BadRequestError('User already unblocked!');
-
-    auth.isBlocked = false;
-    auth.updatedBy = userAuth.id;
-
-    await authService.save(auth, null);
-
-    CommonResponse(
-        res,
-        true,
-        StatusCodes.OK,
-        'User unblocked successfully!',
-        null
-    );
-};
-
-const getAllUsers = async (req: Request, res: Response) => {
-    let response: any[] = [];
-    const userAuth: any = req.auth;
-    const users = await userService.findAllWithGenderRole();
-
-    let filteredUsers = users.filter(
-        (user) => user._id.toString() !== userAuth?.id
-    );
-
-    // map user to user response dto
-    if (filteredUsers.length > 0) {
-        response = userUtil.userModelToUserResponseDtos(filteredUsers);
+    if (!user) {
+        throw new NotFoundError('User not found or already deleted!');
     }
-
-    CommonResponse(res, true, StatusCodes.OK, '', response);
-};
-
-const getUserById = async (req: Request, res: Response) => {
-    const userId = req.params.id;
-
-    let response: any = null;
-
-    const user = await userService.findByIdWithGenderRole(userId);
-
-    if (user) {
-        response = userUtil.userModelToUserResponseDto(user);
-    } else {
-        throw new NotFoundError('User not found!');
-    }
-
-    CommonResponse(res, true, StatusCodes.OK, '', response);
-};
-
-const checkUserName = async (req: Request, res: Response) => {
-    const userId = req.query.id as string;
-    const userName = req.query.userName as string;
-    const email = req.query.email as string;
-    const nic = req.query.nic as string;
-
-    let result = true;
-    let message = '';
-
-    if (userId) {
-        const existingUsers = await userService.validateUserDataForUpdate(
-            1,
-            userName,
-            userId
-        );
-        const existingEmails = await userService.validateUserDataForUpdate(
-            2,
-            email,
-            userId
-        );
-        const existingNics = await userService.validateUserDataForUpdate(
-            3,
-            nic,
-            userId
-        );
-
-        if (existingUsers.length > 0) {
-            result = false;
-            message = 'Username already exists, please try another username!';
-        } else if (existingEmails.length > 0) {
-            result = false;
-            message = 'Email already exists, please try another email!';
-        } else if (existingNics.length > 0) {
-            result = false;
-            message = 'NIC already exists, please try another NIC!';
-        }
-    } else {
-        const existingUsers = await userService.validateUserData(1, userName);
-        const existingEmails = await userService.validateUserData(2, email);
-        const existingNics = await userService.validateUserData(3, nic);
-
-        if (existingUsers.length > 0) {
-            result = false;
-            message = 'Username already exists, please try another username!';
-        } else if (existingEmails.length > 0) {
-            result = false;
-            message = 'Email already exists, please try another email!';
-        } else if (existingNics.length > 0) {
-            result = false;
-            message = 'NIC already exists, please try another NIC!';
-        }
-    }
-
-    CommonResponse(res, true, StatusCodes.OK, message, result);
-};
-
-const deleteUser = async (req: Request, res: Response) => {
-    const userId = req.params.id;
-    const userAuth: any = req.auth;
-
-    let auth: any = await authService.findByUserId(userId);
-    let user: any = await userService.findById(userId);
-
-    if (!auth || !user) throw new NotFoundError('User not found!');
 
     const session = await startSession();
 
@@ -440,15 +408,22 @@ const deleteUser = async (req: Request, res: Response) => {
         //start transaction in session
         session.startTransaction();
 
-        auth.status = WellKnownStatus.DELETED;
-        auth.updatedBy = userAuth.id;
-
-        user.status = WellKnownStatus.DELETED;
-        user.updatedBy = userAuth.id;
+        user.status = WellKnownUserStatus.BLACKLISTED;
+        user.updatedBy = userAuth?.id;
 
         await userService.Save(user, session);
 
-        await authService.save(auth, session);
+        if (
+            user.role === constants.USER.ROLES.ADMIN ||
+            user.role === constants.USER.ROLES.SUPERADMIN
+        ) {
+            let auth: any = await authService.findByUserId(userId);
+            auth.status = WellKnownUserStatus.BLACKLISTED;
+            auth.isBlocked = true;
+            auth.updatedBy = userAuth?.id;
+
+            await authService.save(auth, session);
+        }
 
         //commit transaction
         await session.commitTransaction();
@@ -460,7 +435,111 @@ const deleteUser = async (req: Request, res: Response) => {
         //end session
         session.endSession();
     }
+    CommonResponse(
+        res,
+        true,
+        StatusCodes.OK,
+        'User blacklisted successfully!',
+        null
+    );
+};
 
+// unblock user by user id
+const whitelistUser = async (req: Request, res: Response) => {
+    const userId = req.params.id;
+    const userAuth: any = req.auth;
+    let user = await userService.findByIdAndStatusIn(userId, [
+        WellKnownUserStatus.BLACKLISTED,
+    ]);
+
+    if (!user) {
+        throw new NotFoundError('User not found or user is not in blacklist!');
+    }
+
+    const session = await startSession();
+
+    try {
+        //start transaction in session
+        session.startTransaction();
+
+        user.status = WellKnownUserStatus.ACTIVE;
+        user.updatedBy = userAuth?.id;
+
+        await userService.Save(user, session);
+
+        if (
+            user.role === constants.USER.ROLES.ADMIN ||
+            user.role === constants.USER.ROLES.SUPERADMIN
+        ) {
+            let auth: any = await authService.findByUserId(userId);
+            auth.status = WellKnownUserStatus.ACTIVE;
+            auth.isBlocked = false;
+            auth.updatedBy = userAuth?.id;
+
+            await authService.save(auth, session);
+        }
+
+        //commit transaction
+        await session.commitTransaction();
+    } catch (e) {
+        //abort transaction
+        await session.abortTransaction();
+        throw e;
+    } finally {
+        //end session
+        session.endSession();
+    }
+    CommonResponse(
+        res,
+        true,
+        StatusCodes.OK,
+        'User whitelisted successfully!',
+        null
+    );
+};
+
+const deleteUser = async (req: Request, res: Response) => {
+    const userId = req.params.id;
+    const userAuth: any = req.auth;
+    // let auth: any = await authService.findByUserId(userId);
+    let user = await userService.findByIdAndStatusIn(userId, [
+        WellKnownUserStatus.ACTIVE,
+        WellKnownUserStatus.BLACKLISTED,
+    ]);
+
+    if (!user) {
+        throw new NotFoundError('User not found or already deleted!');
+    }
+
+    const session = await startSession();
+
+    try {
+        //start transaction in session
+        session.startTransaction();
+        user.status = WellKnownStatus.DELETED;
+        user.updatedBy = userAuth.id;
+        await userService.Save(user, session);
+
+        if (
+            user.role === constants.USER.ROLES.ADMIN ||
+            user.role === constants.USER.ROLES.SUPERADMIN
+        ) {
+            let auth: any = await authService.findByUserId(userId);
+            auth.status = WellKnownStatus.DELETED;
+            auth.updatedBy = userAuth.id;
+            await authService.save(auth, session);
+        }
+
+        //commit transaction
+        await session.commitTransaction();
+    } catch (e) {
+        //abort transaction
+        await session.abortTransaction();
+        throw e;
+    } finally {
+        //end session
+        session.endSession();
+    }
     CommonResponse(
         res,
         true,
@@ -470,25 +549,80 @@ const deleteUser = async (req: Request, res: Response) => {
     );
 };
 
-const getAllUsersByRole = async (req: Request, res: Response) => {
-    // const userAuth: any = req.auth;
-    // const roleId = req.params.id;
-    // const role: any = await roleService.findByCustomId(roleId);
-    // let users: any[] = [];
-    // if (role) {
-    //     users = await userService.findAllByRoleId(role?._id);
-    // }
-    // CommonResponse(res, true, StatusCodes.OK, '', users);
+const getNewCustomerCode = async (req: Request, res: Response) => {
+    try {
+        const role = +req.params.roleId;
+
+        const nextCode = await userService.getNextCustomerAdminCode(role);
+        let codeWithPrefix = '';
+
+        if (role === constants.USER.ROLES.CUSTOMER) {
+            codeWithPrefix = `${constants.CODEPREFIX.CUSTOMER}${nextCode
+                .toString()
+                .padStart(4, '0')}`;
+        } else if (
+            role === constants.USER.ROLES.ADMIN ||
+            role === constants.USER.ROLES.SUPERADMIN
+        ) {
+            codeWithPrefix = `${constants.CODEPREFIX.ADMIN}${nextCode
+                .toString()
+                .padStart(4, '0')}`;
+        }
+
+        CommonResponse(res, true, StatusCodes.OK, '', codeWithPrefix);
+    } catch (error) {
+        throw error;
+    }
+};
+
+const getAllUsers = async (req: Request, res: Response) => {
+    let response: any[] = [];
+    const userAuth: any = req.auth;
+
+    if (userAuth.role === constants.USER.ROLES.SUPERADMIN) {
+        const users = await userService.findAllAndStatusIn([
+            WellKnownUserStatus.ACTIVE,
+            WellKnownUserStatus.BLACKLISTED,
+        ]);
+
+        if (users?.length > 0) {
+            response = userUtil.userModelToUserResponseDtos(users);
+        }
+    } else if (userAuth.role === constants.USER.ROLES.ADMIN) {
+        const users = await userService.findAllByCreatedUserAndStatusIn(
+            userAuth.id,
+            [WellKnownUserStatus.ACTIVE, WellKnownUserStatus.BLACKLISTED]
+        );
+
+        if (users?.length > 0) {
+            response = userUtil.userModelToUserResponseDtos(users);
+        }
+    }
+
+    CommonResponse(res, true, StatusCodes.OK, '', response);
+};
+
+const getUserById = async (req: Request, res: Response) => {
+    const userId = req.params.id;
+    let user = await userService.findByIdAndStatusIn(userId, [
+        WellKnownUserStatus.ACTIVE,
+        WellKnownUserStatus.BLACKLISTED,
+    ]);
+
+    if (!user) {
+        throw new NotFoundError('User not found or already deleted!');
+    }
+
+    CommonResponse(res, true, StatusCodes.OK, '', user);
 };
 
 export {
     saveUser,
-    blockUser,
-    unblockUser,
+    blacklistUser,
+    whitelistUser,
     updateUser,
     getAllUsers,
     getUserById,
-    checkUserName,
     deleteUser,
-    getAllUsersByRole,
+    getNewCustomerCode,
 };

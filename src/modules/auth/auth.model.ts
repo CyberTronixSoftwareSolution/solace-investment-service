@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
-import { WellKnownStatus } from '../../util/enums/well-known-status.enum';
+import { WellKnownUserStatus } from '../../util/enums/well-known-user-status.enum';
 
 const authSchema = new mongoose.Schema(
     {
-        userName: {
+        email: {
             type: String,
             required: [true, 'Username is required'],
         },
@@ -24,14 +24,14 @@ const authSchema = new mongoose.Schema(
         },
 
         role: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: Number,
             ref: 'Role',
         },
 
         status: {
             type: Number,
             required: [true, 'Status is required'],
-            default: WellKnownStatus.ACTIVE,
+            default: WellKnownUserStatus.ACTIVE,
         },
 
         createdBy: {

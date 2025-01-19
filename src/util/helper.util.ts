@@ -1,3 +1,5 @@
+import constants from '../constant';
+
 // return the name of the enum value
 const getNameFromEnum = (enumValue: any, value: any): string => {
     return enumValue[value];
@@ -8,7 +10,27 @@ const isValueInEnum = (enumValue: any, value: any): boolean => {
     return Object.values(enumValue).includes(value);
 };
 
+const createCodes = (prefix: string, code: number) => {
+    return `${prefix}${code.toString().padStart(4, '0')}`;
+};
+
+const getRoleName = (roleId: number) => {
+    const { ROLES } = constants.USER;
+    switch (roleId) {
+        case ROLES.SUPERADMIN:
+            return 'Super Admin';
+        case ROLES.ADMIN:
+            return 'Admin';
+        case ROLES.CUSTOMER:
+            return 'Customer';
+        default:
+            return 'Unknown';
+    }
+};
+
 export default {
     getNameFromEnum,
     isValueInEnum,
+    createCodes,
+    getRoleName,
 };

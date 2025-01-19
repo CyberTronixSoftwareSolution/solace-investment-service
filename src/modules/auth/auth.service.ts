@@ -1,4 +1,5 @@
 import { WellKnownStatus } from '../../util/enums/well-known-status.enum';
+import { WellKnownUserStatus } from '../../util/enums/well-known-user-status.enum';
 import Auth from './auth.model';
 
 const save = async (auth: any, session: any) => {
@@ -9,11 +10,13 @@ const save = async (auth: any, session: any) => {
     }
 };
 
-const findByUserName = async (userName: string) => {
+const findByEmail = async (email: string) => {
     return await Auth.findOne({
-        userName,
-        status: WellKnownStatus.ACTIVE,
-    }).populate('user role');
+        email,
+        status: {
+            $in: [WellKnownUserStatus.ACTIVE, WellKnownUserStatus.BLACKLISTED],
+        },
+    }).populate('user');
 };
 
 // find by id and status not delete
@@ -21,7 +24,7 @@ const findById = async (id: string) => {
     return await Auth.findOne({
         _id: id,
         status: WellKnownStatus.ACTIVE,
-    }).populate('user role');
+    }).populate('user');
 };
 
 const findByUserId = async (userId: string) => {
@@ -31,4 +34,4 @@ const findByUserId = async (userId: string) => {
     });
 };
 
-export default { save, findByUserName, findById, findByUserId };
+export default { save, findByEmail, findById, findByUserId };

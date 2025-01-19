@@ -8,8 +8,8 @@ const generateToken = (auth: any) => {
 
     let tokenPayload = {
         id: auth.user._id,
-        userName: auth.userName,
-        role: auth.role.id,
+        email: auth.email,
+        role: auth.role,
         authId: auth._id,
     };
 

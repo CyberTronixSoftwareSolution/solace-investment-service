@@ -1,40 +1,34 @@
+import { WellKnownUserStatus } from '../../util/enums/well-known-user-status.enum';
 import UserResponseDto from './dto/userResponseDto';
+import helperUtil from '../../util/helper.util';
+import constants from '../../constant';
 
 const userModelToUserResponseDto = (user: any): UserResponseDto => {
     return {
         _id: user._id,
-        fullName: user.fullName,
-        userName: user.userName,
-        gender: user.gender?.id,
-        genderName: user.gender.name,
-        dateOfBirth: user.dateOfBirth,
-        address: user.address,
-        phoneNumber1: user.phoneNumber1,
-        phoneNumber2: user.phoneNumber2,
-        email: user.email,
-        profileImageUrl: user.profileImageUrl,
-        nic: user.nic,
-        nicImageUrl: user.nicImageUrl,
-        gsCertificateUrl: user.gsCertificateUrl,
-        drivingLicenseUrl: user.drivingLicenseUrl,
-        sltdaCertificateUrl: user.sltdaCertificateUrl,
-        policeReportUrl: user.policeReportUrl,
-        bankName: user.bankName,
-        bankId: user.bankId,
-        branch: user.branch,
-        accountNumber: user.accountNumber,
-        accountHolderName: user.accountHolderName,
-        accountHolderAddress: user.accountHolderAddress,
-        basicSalary: user.basicSalary,
-        leaveCount: user.leaveCount,
-        languages: user.languages,
-        isBlackListed: user.isBlock ? true : false,
-        role: user.role.id,
+        fullName: user?.title + ' ' + user?.firstName + ' ' + user?.lastName,
+        customerCode: helperUtil.createCodes(
+            user.role === constants.USER.ROLES.ADMIN ||
+                user.role === constants.USER.ROLES.SUPERADMIN
+                ? constants.CODEPREFIX.ADMIN
+                : constants.CODEPREFIX.CUSTOMER,
+            user?.customerCode
+        ),
+        genderId: user?.genderId,
+        genderName: user?.genderName,
+        dateOfBirth: user?.dateOfBirth,
+        mobileNo: user?.mobileNo || '',
+        email: user?.email || '',
+        profileImageUrl: user?.profileImageUrl,
+        nicNumber: user?.nicNumber,
+        isBlackListed:
+            user.status === WellKnownUserStatus.BLACKLISTED ? true : false,
+        role: user.role,
         roleName: user.role.name,
         createdBy: user.createdBy?._id,
-        createdUser: user.createdBy?.fullName,
+        createdUser: user.createdBy?.firstName,
         updatedBy: user.updatedBy?._id,
-        updatedUser: user.updatedBy?.fullName,
+        updatedUser: user.updatedBy?.firstName,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
     };

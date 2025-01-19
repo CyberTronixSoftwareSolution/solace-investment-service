@@ -10,14 +10,13 @@ const applicationRoutes = {
     user: {
         base: '/user',
         save: '/',
+        update: '/:id',
+        blacklistUser: '/blacklist/:id',
+        whitelistUser: '/whitelist/:id',
         getAll: '/',
         getById: '/:id',
-        update: '/:id',
         deleteById: '/:id',
-        blockUser: '/block/:id',
-        unblockUser: '/unblock/:id',
-        validateUser: '/validateUser',
-        getUsersByRole: '/userByRole/:id',
+        getCustomerCode: '/getCustomerCode/:roleId',
     },
 
     auth: {

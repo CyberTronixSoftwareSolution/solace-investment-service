@@ -6,23 +6,17 @@ import jwtUtil from '../../util/jwt.util';
 import CommonResponse from '../../util/commonResponse';
 import { StatusCodes } from 'http-status-codes';
 import UnauthorizedError from '../../error/UnauthorizedError';
-import {
-    adminMenu,
-    driverMenu,
-    financeOfficerMenu,
-    superAdminMenu,
-    tripManagerMenu,
-} from '../../util/data/menudata';
+import { adminMenu, superAdminMenu } from '../../util/data/menudata';
 import constants from '../../constant';
 
 const userLogin = async (req: Request, res: Response) => {
-    const { userName, password } = req.body;
+    const { email, password } = req.body;
 
-    const existAuth: any = await authService.findByUserName(userName);
+    const existAuth: any = await authService.findByEmail(email);
 
     if (!existAuth)
         throw new BadRequestError(
-            'Invalid username, Please try again with correct username!'
+            'Invalid email, Please try again with correct email!'
         );
 
     if (existAuth?.isBlocked)
@@ -45,7 +39,7 @@ const userLogin = async (req: Request, res: Response) => {
     const response = {
         token: token,
         user: existAuth?.user,
-        role: existAuth.role?.id,
+        role: existAuth.role,
         modules: filterModules(existAuth),
         moduleIds: filterModules(existAuth).map((module) => module.id),
     };
@@ -62,15 +56,6 @@ const filterModules = (userAuth: any): any[] => {
             break;
         case constants.USER.ROLES.ADMIN:
             modules = adminMenu;
-            break;
-        case constants.USER.ROLES.DRIVER:
-            modules = driverMenu;
-            break;
-        case constants.USER.ROLES.FINANCEOFFICER:
-            modules = financeOfficerMenu;
-            break;
-        case constants.USER.ROLES.TRIPMANAGER:
-            modules = tripManagerMenu;
             break;
         default:
             break;

@@ -10,6 +10,11 @@ const constants = {
             CUSTOMER: 3,
         },
     },
+
+    CODEPREFIX: {
+        CUSTOMER: 'CUS',
+        ADMIN: 'ADM',
+    },
 };
 
 export default constants;
