@@ -34,11 +34,14 @@ const userLogin = async (req: Request, res: Response) => {
 
     const token = jwtUtil.generateToken(existAuth);
 
-    let modules = [];
-
     const response = {
         token: token,
-        user: existAuth?.user,
+        user: {
+            _id: existAuth?.user?._id,
+            name: existAuth?.user?.firstName + ' ' + existAuth?.user?.lastName,
+            email: existAuth?.email,
+            profileImageUrl: existAuth?.user?.profileImageUrl || null,
+        },
         role: existAuth.role,
         modules: filterModules(existAuth),
         moduleIds: filterModules(existAuth).map((module) => module.id),
@@ -50,7 +53,7 @@ const userLogin = async (req: Request, res: Response) => {
 const filterModules = (userAuth: any): any[] => {
     let modules: any[] = [];
 
-    switch (userAuth.role?.id) {
+    switch (userAuth.role) {
         case constants.USER.ROLES.SUPERADMIN:
             modules = superAdminMenu;
             break;

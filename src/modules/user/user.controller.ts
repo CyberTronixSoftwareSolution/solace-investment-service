@@ -48,7 +48,9 @@ const saveUser = async (req: Request, res: Response) => {
         drivingLicenseUrl,
         businessRegistrationUrl,
         profileImageUrl,
+        bankBookUrl,
         bankName,
+        accountHolderName,
         bankId,
         branch,
         accountNumber,
@@ -147,7 +149,9 @@ const saveUser = async (req: Request, res: Response) => {
             drivingLicenseUrl: drivingLicenseUrl,
             businessRegistrationUrl: businessRegistrationUrl,
             profileImageUrl: profileImageUrl,
+            bankBookUrl: bankBookUrl,
             bankName: bankName,
+            accountHolderName: accountHolderName,
             bankId: bankId,
             branch: branch,
             accountNumber: accountNumber,
@@ -233,7 +237,9 @@ const updateUser = async (req: Request, res: Response) => {
         drivingLicenseUrl,
         businessRegistrationUrl,
         profileImageUrl,
+        bankBookUrl,
         bankName,
+        accountHolderName,
         bankId,
         branch,
         accountNumber,
@@ -344,7 +350,9 @@ const updateUser = async (req: Request, res: Response) => {
         user.drivingLicenseUrl = drivingLicenseUrl;
         user.businessRegistrationUrl = businessRegistrationUrl;
         user.profileImageUrl = profileImageUrl;
+        user.bankBookUrl = bankBookUrl;
         user.bankName = bankName;
+        user.accountHolderName = accountHolderName;
         user.bankId = bankId;
         user.branch = branch;
         user.accountNumber = accountNumber;

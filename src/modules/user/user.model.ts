@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
 
         fullName: {
             type: String,
-            maxlength: [100, 'Full Name cannot be more than 100 characters'],
+            maxlength: [200, 'Full Name cannot be more than 200 characters'],
             required: [true, 'Full Name is required'],
         },
 
@@ -293,6 +293,11 @@ const userSchema = new mongoose.Schema(
             default: null,
         },
 
+        bankBookUrl: {
+            type: String,
+            default: null,
+        },
+
         // Bank Account Information
         bankName: {
             type: String,
@@ -312,6 +317,14 @@ const userSchema = new mongoose.Schema(
         accountNumber: {
             type: String,
             maxlength: [50, 'Account Number cannot be more than 50 characters'],
+        },
+
+        accountHolderName: {
+            type: String,
+            maxlength: [
+                200,
+                'Account Holder Name cannot be more than 200 characters',
+            ],
         },
 
         role: {

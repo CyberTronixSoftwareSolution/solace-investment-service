@@ -18,6 +18,7 @@ const userModelToUserResponseDto = (user: any): UserResponseDto => {
         genderName: user?.genderName,
         dateOfBirth: user?.dateOfBirth,
         mobileNo: user?.mobileNo || '',
+        residenceNo: user?.residenceNo || '',
         email: user?.email || '',
         profileImageUrl: user?.profileImageUrl,
         nicNumber: user?.nicNumber,

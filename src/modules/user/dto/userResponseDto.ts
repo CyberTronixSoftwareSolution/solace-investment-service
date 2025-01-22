@@ -6,6 +6,7 @@ interface UserResponseDto {
     genderName: string;
     dateOfBirth: Date;
     mobileNo: string;
+    residenceNo: string;
     email: string;
     profileImageUrl: string;
     nicNumber: string;
