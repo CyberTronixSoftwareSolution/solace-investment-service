@@ -17,7 +17,7 @@ const userModelToUserResponseDto = (user: any): UserResponseDto => {
         genderId: user?.genderId,
         genderName: user?.genderName,
         dateOfBirth: user?.dateOfBirth,
-        mobileNo: user?.mobileNo || '',
+        mobileNo: user?.mobileNo1 || '',
         residenceNo: user?.residenceNo || '',
         email: user?.email || '',
         profileImageUrl: user?.profileImageUrl,
@@ -25,7 +25,12 @@ const userModelToUserResponseDto = (user: any): UserResponseDto => {
         isBlackListed:
             user.status === WellKnownUserStatus.BLACKLISTED ? true : false,
         role: user.role,
-        roleName: user.role.name,
+        roleName: helperUtil.getRoleName(user.role),
+        status: user.status,
+        statusName: helperUtil.getNameFromEnum(
+            WellKnownUserStatus,
+            user.status
+        ),
         createdBy: user.createdBy?._id,
         createdUser: user.createdBy?.firstName,
         updatedBy: user.updatedBy?._id,

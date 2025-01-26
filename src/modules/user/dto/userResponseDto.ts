@@ -12,6 +12,8 @@ interface UserResponseDto {
     nicNumber: string;
     role: string;
     roleName: string;
+    status: Number;
+    statusName: string;
     isBlackListed: boolean;
     createdBy: string;
     createdUser: string;

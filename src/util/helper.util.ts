@@ -11,7 +11,7 @@ const isValueInEnum = (enumValue: any, value: any): boolean => {
 };
 
 const createCodes = (prefix: string, code: number) => {
-    return `${prefix}${code.toString().padStart(4, '0')}`;
+    return `${prefix}${code.toString().padStart(3, '0')}`;
 };
 
 const getRoleName = (roleId: number) => {

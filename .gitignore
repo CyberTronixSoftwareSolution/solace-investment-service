@@ -112,6 +112,9 @@ src/uploads/DrivingLicense/*
 src/uploads/SLTDACertificate/*
 src/uploads/PoliceReport/*
 src/uploads/ExpensesRecept/*
+src/uploads/BankBook/*
+src/uploads/BusinessRegistration/*
+
 
 backups/*
 

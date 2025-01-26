@@ -9,6 +9,8 @@ import {
     updateUser,
     deleteUser,
     getNewCustomerCode,
+    validateUserData,
+    getProfile,
 } from './user.controller';
 import authMiddleware from '../../middleware/auth.middleware';
 import constants from '../../constant';
@@ -59,6 +61,24 @@ UserRouter.get(
         constants.USER.ROLES.ADMIN,
     ]),
     getAllUsers
+);
+
+UserRouter.get(
+    applicationRoutes.user.validateUserData,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    validateUserData
+);
+
+UserRouter.get(
+    applicationRoutes.user.getProfile,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    getProfile
 );
 
 UserRouter.get(

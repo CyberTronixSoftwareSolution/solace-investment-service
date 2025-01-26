@@ -95,6 +95,7 @@ const saveUser = async (req: Request, res: Response) => {
         let expensesDetailsObj: any = null;
 
         if (expensesDetails?.expenses?.length > 0) {
+            expensesDetails.expenses.map((p: any) => delete p._id);
             expensesDetailsObj = {
                 expenses: expensesDetails.expenses,
                 totalExpenses:
@@ -109,6 +110,7 @@ const saveUser = async (req: Request, res: Response) => {
         let incomeDetailsObj: any = null;
 
         if (incomeDetails?.incomes?.length > 0) {
+            incomeDetails.incomes.map((p: any) => delete p._id);
             incomeDetailsObj = {
                 incomes: incomeDetails.incomes,
                 totalIncome:
@@ -117,6 +119,14 @@ const saveUser = async (req: Request, res: Response) => {
                         0
                     ) || 0,
             };
+        }
+
+        if (addresses?.length > 0) {
+            addresses.map((p: any) => delete p._id) || [];
+        }
+
+        if (familyInfos?.length > 0) {
+            familyInfos.map((p: any) => delete p._id) || [];
         }
 
         // create user only if role is customer
@@ -141,8 +151,8 @@ const saveUser = async (req: Request, res: Response) => {
             residenceNo: residenceNo,
             email: email,
             spouseDetails: spouseDetails,
-            addresses: addresses?.length > 0 ? addresses : [],
-            familyInfos: familyInfos?.length > 0 ? familyInfos : [],
+            addresses: addresses,
+            familyInfos: familyInfos,
             expensesDetails: expensesDetailsObj,
             incomeDetails: incomeDetailsObj,
             nicImageUrl: nicImageUrl,
@@ -261,18 +271,19 @@ const updateUser = async (req: Request, res: Response) => {
         user.role === constants.USER.ROLES.ADMIN &&
         userAuth.role === constants.USER.ROLES.SUPERADMIN
     ) {
-        const existingEmails = await userService.validateUserDataForUpdate(
-            2,
-            email,
-            userId
-        );
+        const existingEmails =
+            await userService.validateEmailNicForSaveAndUpdate(
+                email,
+                '',
+                userId
+            );
 
         if (existingEmails.length > 0) {
             error = 'Email already exists!';
         }
     } else if (user.role === constants.USER.ROLES.CUSTOMER) {
-        const existingNics = await userService.validateUserDataForUpdate(
-            1,
+        const existingNics = await userService.validateEmailNicForSaveAndUpdate(
+            '',
             nicNumber,
             userId
         );
@@ -300,7 +311,10 @@ const updateUser = async (req: Request, res: Response) => {
 
         if (expensesDetails?.expenses?.length > 0) {
             expensesDetailsObj = {
-                expenses: expensesDetails.expenses,
+                expenses: expensesDetails.expenses.map((p: any) => {
+                    delete p._id;
+                    return p;
+                }),
                 totalExpenses:
                     expensesDetails.expenses.reduce(
                         (total: number, expense: any) => total + expense.amount,
@@ -314,13 +328,24 @@ const updateUser = async (req: Request, res: Response) => {
 
         if (incomeDetails?.incomes?.length > 0) {
             incomeDetailsObj = {
-                incomes: incomeDetails.incomes,
+                incomes: incomeDetails.incomes.map((p: any) => {
+                    delete p._id;
+                    return p;
+                }),
                 totalIncome:
                     incomeDetails.incomes.reduce(
                         (total: number, income: any) => total + income.amount,
                         0
                     ) || 0,
             };
+        }
+
+        if (addresses?.length > 0) {
+            addresses.map((p: any) => delete p._id) || [];
+        }
+
+        if (familyInfos?.length > 0) {
+            familyInfos.map((p: any) => delete p._id) || [];
         }
 
         user.nicNumber = nicNumber;
@@ -588,11 +613,14 @@ const getAllUsers = async (req: Request, res: Response) => {
     const userAuth: any = req.auth;
 
     if (userAuth.role === constants.USER.ROLES.SUPERADMIN) {
-        const users = await userService.findAllAndStatusIn([
+        let users = await userService.findAllAndStatusIn([
             WellKnownUserStatus.ACTIVE,
             WellKnownUserStatus.BLACKLISTED,
         ]);
 
+        users = users.filter(
+            (user: any) => user._id.toString() !== userAuth.id
+        );
         if (users?.length > 0) {
             response = userUtil.userModelToUserResponseDtos(users);
         }
@@ -624,6 +652,58 @@ const getUserById = async (req: Request, res: Response) => {
     CommonResponse(res, true, StatusCodes.OK, '', user);
 };
 
+const validateUserData = async (req: Request, res: Response) => {
+    const userId = req.query.id as string;
+    const email = req.query.email as string;
+    const nic = req.query.nic as string;
+    const role = req.query.role as string;
+
+    let message = '';
+    let result = true;
+    if (Number(role) === constants.USER.ROLES.CUSTOMER) {
+        let checkUsers: any[] =
+            await userService.validateEmailNicForSaveAndUpdate('', nic, userId);
+
+        if (checkUsers.length > 0) {
+            message = 'Nic already exist for another customer!';
+            result = false;
+        }
+    } else if (
+        Number(role) === constants.USER.ROLES.ADMIN ||
+        Number(role) === constants.USER.ROLES.SUPERADMIN
+    ) {
+        let checkUsers: any[] =
+            await userService.validateEmailNicForSaveAndUpdate(
+                email,
+                '',
+                userId
+            );
+
+        if (checkUsers.length > 0) {
+            message = 'Email already exist for another admin!';
+            result = false;
+        }
+    }
+
+    CommonResponse(res, true, StatusCodes.OK, message, result);
+};
+
+const getProfile = async (req: Request, res: Response) => {
+    const userAuth: any = req.auth;
+
+    const userId = userAuth?.id;
+    let user = await userService.findByIdAndStatusIn(userId, [
+        WellKnownUserStatus.ACTIVE,
+        WellKnownUserStatus.BLACKLISTED,
+    ]);
+
+    if (!user) {
+        throw new NotFoundError('User not found or already deleted!');
+    }
+
+    CommonResponse(res, true, StatusCodes.OK, '', user);
+};
+
 export {
     saveUser,
     blacklistUser,
@@ -633,4 +713,6 @@ export {
     getUserById,
     deleteUser,
     getNewCustomerCode,
+    validateUserData,
+    getProfile,
 };

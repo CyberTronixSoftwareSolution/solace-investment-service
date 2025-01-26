@@ -1,5 +1,6 @@
 import constants from '../../constant';
 import { WellKnownStatus } from '../../util/enums/well-known-status.enum';
+import { WellKnownUserStatus } from '../../util/enums/well-known-user-status.enum';
 import Auth from '../auth/auth.model';
 import User from './user.model';
 
@@ -122,6 +123,84 @@ const findAllByCreatedUserAndStatusIn = async (
         .sort({ createdAt: -1 });
 };
 
+const validateEmailNicForSaveAndUpdate = async (
+    email: string,
+    nic: string,
+    id: string
+) => {
+    if (email && id) {
+        return (
+            (await User.find({
+                email: email,
+                _id: { $ne: id },
+                status: {
+                    $in: [
+                        WellKnownUserStatus.ACTIVE,
+                        WellKnownUserStatus.BLACKLISTED,
+                    ],
+                },
+                role: {
+                    $in: [
+                        constants.USER.ROLES.ADMIN,
+                        constants.USER.ROLES.SUPERADMIN,
+                    ],
+                },
+            })) || []
+        );
+    } else if (nic && id) {
+        return (
+            (await User.find({
+                nicNumber: nic,
+                _id: { $ne: id },
+                status: {
+                    $in: [
+                        WellKnownUserStatus.ACTIVE,
+                        WellKnownUserStatus.BLACKLISTED,
+                    ],
+                },
+                role: {
+                    $in: [constants.USER.ROLES.CUSTOMER],
+                },
+            })) || []
+        );
+    } else if (email) {
+        return (
+            (await User.find({
+                email: email,
+                status: {
+                    $in: [
+                        WellKnownUserStatus.ACTIVE,
+                        WellKnownUserStatus.BLACKLISTED,
+                    ],
+                },
+                role: {
+                    $in: [
+                        constants.USER.ROLES.ADMIN,
+                        constants.USER.ROLES.SUPERADMIN,
+                    ],
+                },
+            })) || []
+        );
+    } else if (nic) {
+        return (
+            (await User.find({
+                nicNumber: nic,
+                status: {
+                    $in: [
+                        WellKnownUserStatus.ACTIVE,
+                        WellKnownUserStatus.BLACKLISTED,
+                    ],
+                },
+                role: {
+                    $in: [constants.USER.ROLES.CUSTOMER],
+                },
+            })) || []
+        );
+    }
+
+    return [];
+};
+
 export default {
     Save,
     findById,
@@ -131,4 +210,5 @@ export default {
     findByNicOrEmail,
     getNextCustomerAdminCode,
     validateUserDataForUpdate,
+    validateEmailNicForSaveAndUpdate,
 };

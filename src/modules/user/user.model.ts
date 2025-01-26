@@ -306,7 +306,6 @@ const userSchema = new mongoose.Schema(
 
         bankId: {
             type: Number,
-            required: [true, 'Bank Id is required'],
         },
 
         branch: {
