@@ -28,6 +28,16 @@ const applicationRoutes = {
         changePassword: '/changePassword',
         refreshAuth: '/refreshAuth',
     },
+
+    product: {
+        base: '/product',
+        save: '/',
+        update: '/update/:id',
+        deleteById: '/delete/:id',
+        getAll: '/',
+        activeInactive: '/activeInactive/:id',
+        getById: '/:id',
+    },
 };
 
 export default applicationRoutes;
