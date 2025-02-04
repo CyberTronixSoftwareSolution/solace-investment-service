@@ -44,18 +44,18 @@ const saveProduct = async (req: Request, res: Response) => {
         let deductionCharges: any[] = [];
         if (!body.isOpenDeductionCharges) {
             body.deductionCharges.forEach((element: any) => {
-                let rate: number = 0;
+                let amount: number = 0;
                 if (element.isPercentage) {
-                    rate = (element.amount / 100) * element.rate;
+                    amount = (body.amount / 100) * element.rate;
                 } else {
-                    rate = element.rate;
+                    amount = element.rate;
                 }
 
                 deductionCharges.push({
                     deductionChargeName: element.deductionChargeName,
                     isPercentage: element.isPercentage,
-                    rate: rate,
-                    amount: element.amount,
+                    rate: element.rate,
+                    amount: amount,
                 });
             });
         }
@@ -135,18 +135,18 @@ const updateProduct = async (req: Request, res: Response) => {
         let deductionCharges: any[] = [];
         if (!body.isOpenDeductionCharges) {
             body.deductionCharges.forEach((element: any) => {
-                let rate: number = 0;
+                let amount: number = 0;
                 if (element.isPercentage) {
-                    rate = (element.amount / 100) * element.rate;
+                    amount = (body.amount / 100) * element.rate;
                 } else {
-                    rate = element.rate;
+                    amount = element.rate;
                 }
 
                 deductionCharges.push({
                     deductionChargeName: element.deductionChargeName,
                     isPercentage: element.isPercentage,
-                    rate: rate,
-                    amount: element.amount,
+                    rate: element.rate,
+                    amount: amount,
                 });
             });
         }
