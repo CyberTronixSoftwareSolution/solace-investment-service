@@ -18,6 +18,7 @@ import { WellKnownStatus } from '../../util/enums/well-known-status.enum';
 import constants from '../../constant';
 import { WellKnownUserStatus } from '../../util/enums/well-known-user-status.enum';
 import helperUtil from '../../util/helper.util';
+import UserSearchResponse from './dto/userSearchResponse';
 
 const saveUser = async (req: Request, res: Response) => {
     const {
@@ -704,6 +705,34 @@ const getProfile = async (req: Request, res: Response) => {
     CommonResponse(res, true, StatusCodes.OK, '', user);
 };
 
+const searchParamsUser = async (req: Request, res: Response) => {
+    const type = req.query.type as string;
+    const searchName = req.query.searchName as string;
+
+    let response: UserSearchResponse[] = [];
+
+    if (type === 'customer') {
+        let users = await userService.findAllByRoleInForSearch([
+            constants.USER.ROLES.CUSTOMER,
+        ]);
+
+        response = userUtil.userModelsToUserSearchResponse(users);
+    } else if (type === 'admin') {
+        let users = await userService.findAllByRoleInForSearch([
+            constants.USER.ROLES.ADMIN,
+            constants.USER.ROLES.SUPERADMIN,
+        ]);
+
+        response = userUtil.userModelsToUserSearchResponse(users);
+    }
+
+    response = response.filter((x: UserSearchResponse) =>
+        x.label.toLowerCase().includes(searchName)
+    );
+
+    CommonResponse(res, true, StatusCodes.OK, '', response);
+};
+
 export {
     saveUser,
     blacklistUser,
@@ -715,4 +744,5 @@ export {
     getNewCustomerCode,
     validateUserData,
     getProfile,
+    searchParamsUser,
 };

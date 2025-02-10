@@ -2,6 +2,7 @@ import { WellKnownUserStatus } from '../../util/enums/well-known-user-status.enu
 import UserResponseDto from './dto/userResponseDto';
 import helperUtil from '../../util/helper.util';
 import constants from '../../constant';
+import UserSearchResponseDto from './dto/userSearchResponse';
 
 const userModelToUserResponseDto = (user: any): UserResponseDto => {
     return {
@@ -46,4 +47,33 @@ const userModelToUserResponseDtos = (users: any[]): UserResponseDto[] => {
     ) as UserResponseDto[];
 };
 
-export default { userModelToUserResponseDto, userModelToUserResponseDtos };
+const userModelToUserSearchResponse = (user: any): UserSearchResponseDto => {
+    let code = helperUtil.createCodes(
+        user.role === constants.USER.ROLES.ADMIN ||
+            user.role === constants.USER.ROLES.SUPERADMIN
+            ? constants.CODEPREFIX.ADMIN
+            : constants.CODEPREFIX.CUSTOMER,
+        user?.customerCode
+    );
+
+    return {
+        _id: user._id,
+        fullName: user?.fullName,
+        customerCode: code,
+        nicNumber: user?.nicNumber,
+        label: `${code} - ${user?.fullName}`,
+    };
+};
+
+const userModelsToUserSearchResponse = (
+    users: any[]
+): UserSearchResponseDto[] => {
+    return users.map((user) => userModelToUserSearchResponse(user));
+};
+
+export default {
+    userModelToUserResponseDto,
+    userModelToUserResponseDtos,
+    userModelToUserSearchResponse,
+    userModelsToUserSearchResponse,
+};

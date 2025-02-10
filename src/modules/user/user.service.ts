@@ -2,7 +2,9 @@ import constants from '../../constant';
 import { WellKnownStatus } from '../../util/enums/well-known-status.enum';
 import { WellKnownUserStatus } from '../../util/enums/well-known-user-status.enum';
 import Auth from '../auth/auth.model';
+import UserSearchResponseDto from './dto/userSearchResponse';
 import User from './user.model';
+import userUtil from './user.util';
 
 const Save = async (user: any, session: any) => {
     if (session) {
@@ -201,6 +203,14 @@ const validateEmailNicForSaveAndUpdate = async (
     return [];
 };
 
+const findAllByRoleInForSearch = async (role: number[]) => {
+    return await User.find({
+        role: { $in: role },
+    })
+        .sort({ createdAt: -1 })
+        .select('_id fullName nicNumber role customerCode');
+};
+
 export default {
     Save,
     findById,
@@ -211,4 +221,5 @@ export default {
     getNextCustomerAdminCode,
     validateUserDataForUpdate,
     validateEmailNicForSaveAndUpdate,
+    findAllByRoleInForSearch,
 };

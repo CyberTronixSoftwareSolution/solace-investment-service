@@ -19,6 +19,7 @@ const applicationRoutes = {
         deleteById: '/delete/:id',
         getCustomerCode: '/getCustomerCode/:roleId',
         validateUserData: '/validateUser/data',
+        searchByParam: '/searchByParam',
     },
 
     auth: {

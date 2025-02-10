@@ -11,6 +11,7 @@ import {
     getNewCustomerCode,
     validateUserData,
     getProfile,
+    searchParamsUser,
 } from './user.controller';
 import authMiddleware from '../../middleware/auth.middleware';
 import constants from '../../constant';
@@ -61,6 +62,15 @@ UserRouter.get(
         constants.USER.ROLES.ADMIN,
     ]),
     getAllUsers
+);
+
+UserRouter.get(
+    applicationRoutes.user.searchByParam,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    searchParamsUser
 );
 
 UserRouter.get(
