@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { WellKnownStatus } from '../../../util/enums/well-known-status.enum';
+import { WellKnownLoanPaymentStatus } from '../../../util/enums/well-known-loan-payment-status.enum';
 
 const LoanDetailSchema = new mongoose.Schema(
     {
@@ -41,7 +41,8 @@ const LoanDetailSchema = new mongoose.Schema(
 
         status: {
             type: String,
-            enum: Object.values(WellKnownStatus),
+            enum: Object.values(WellKnownLoanPaymentStatus),
+            default: WellKnownLoanPaymentStatus.PENDING,
             required: [true, 'Status is required'],
         },
 
@@ -58,6 +59,16 @@ const LoanDetailSchema = new mongoose.Schema(
 
         paymentDate: {
             type: Date,
+        },
+
+        actualPaymentAmount: {
+            type: Number,
+            default: 0,
+        },
+
+        isActualPayment: {
+            type: Boolean,
+            default: false,
         },
 
         paymentAmount: {

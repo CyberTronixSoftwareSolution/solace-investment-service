@@ -39,6 +39,14 @@ const applicationRoutes = {
         activeInactive: '/activeInactive/:id',
         getById: '/:id',
     },
+
+    loan: {
+        base: '/loan',
+        save: '/',
+        deleteById: '/delete/:id',
+        getAll: '/',
+        getById: '/:id',
+    },
 };
 
 export default applicationRoutes;

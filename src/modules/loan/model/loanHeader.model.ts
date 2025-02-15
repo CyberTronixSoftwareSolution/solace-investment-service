@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { WellKnownStatus } from '../../../util/enums/well-known-status.enum';
+import { WellKnownLoanStatus } from '../../../util/enums/well-known-loan-status.enum';
 
 const LoanHeaderSchema = new mongoose.Schema(
     {
@@ -139,7 +140,8 @@ const LoanHeaderSchema = new mongoose.Schema(
         status: {
             type: Number,
             required: [true, 'Status is required'],
-            default: WellKnownStatus.ACTIVE,
+            enum: Object.values(WellKnownLoanStatus),
+            default: WellKnownLoanStatus.PENDING,
         },
 
         createdBy: {
