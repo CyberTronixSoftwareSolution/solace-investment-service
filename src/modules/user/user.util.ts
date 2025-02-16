@@ -8,13 +8,7 @@ const userModelToUserResponseDto = (user: any): UserResponseDto => {
     return {
         _id: user._id,
         fullName: user?.title + ' ' + user?.firstName + ' ' + user?.lastName,
-        customerCode: helperUtil.createCodes(
-            user.role === constants.USER.ROLES.ADMIN ||
-                user.role === constants.USER.ROLES.SUPERADMIN
-                ? constants.CODEPREFIX.ADMIN
-                : constants.CODEPREFIX.CUSTOMER,
-            user?.customerCode
-        ),
+        customerCode: user?.customerCode,
         genderId: user?.genderId,
         genderName: user?.genderName,
         dateOfBirth: user?.dateOfBirth,
@@ -48,20 +42,12 @@ const userModelToUserResponseDtos = (users: any[]): UserResponseDto[] => {
 };
 
 const userModelToUserSearchResponse = (user: any): UserSearchResponseDto => {
-    let code = helperUtil.createCodes(
-        user.role === constants.USER.ROLES.ADMIN ||
-            user.role === constants.USER.ROLES.SUPERADMIN
-            ? constants.CODEPREFIX.ADMIN
-            : constants.CODEPREFIX.CUSTOMER,
-        user?.customerCode
-    );
-
     return {
         _id: user._id,
         fullName: user?.fullName,
-        customerCode: code,
+        customerCode: user?.customerCode,
         nicNumber: user?.nicNumber,
-        label: `${code} - ${user?.fullName}`,
+        label: `${user?.customerCode} - ${user?.fullName}`,
     };
 };
 

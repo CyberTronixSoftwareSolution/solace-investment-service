@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
         },
 
         customerCode: {
-            type: Number,
+            type: String,
         },
 
         titleId: {
@@ -359,5 +359,13 @@ const userSchema = new mongoose.Schema(
         versionKey: false,
     }
 );
+
+userSchema.index({ nicNumber: 1 });
+userSchema.index({ email: 1 });
+userSchema.index({ status: 1 });
+userSchema.index({ createdAt: -1 });
+userSchema.index({ _id: 1, status: 1 });
+userSchema.index({ email: 1, status: 1 });
+userSchema.index({ role: 1, status: 1 });
 
 export default mongoose.model('User', userSchema);

@@ -1,6 +1,7 @@
 import constants from '../../constant';
 import { WellKnownStatus } from '../../util/enums/well-known-status.enum';
 import { WellKnownUserStatus } from '../../util/enums/well-known-user-status.enum';
+import helperUtil from '../../util/helper.util';
 import Auth from '../auth/auth.model';
 import UserSearchResponseDto from './dto/userSearchResponse';
 import User from './user.model';
@@ -74,11 +75,30 @@ const findByNicOrEmail = async (email: string, nic: string) => {
 
 const getNextCustomerAdminCode = async (role: number) => {
     // max customerCode by role and plus 1
-    const maxCode: any = await User.findOne({ role: role }).sort({
-        customerCode: -1,
-    });
+    const documentCount = await User.countDocuments({ role: role });
 
-    return maxCode ? maxCode.customerCode + 1 : 1;
+    let customerNo = documentCount ? documentCount + 1 : 1;
+
+    let customerCode = helperUtil.createCodes(
+        role === constants.USER.ROLES.ADMIN ||
+            role === constants.USER.ROLES.SUPERADMIN
+            ? constants.CODEPREFIX.ADMIN
+            : constants.CODEPREFIX.CUSTOMER,
+        customerNo
+    );
+
+    while (await User.findOne({ customerCode })) {
+        customerNo += 1;
+        customerCode = helperUtil.createCodes(
+            role === constants.USER.ROLES.ADMIN ||
+                role === constants.USER.ROLES.SUPERADMIN
+                ? constants.CODEPREFIX.ADMIN
+                : constants.CODEPREFIX.CUSTOMER,
+            customerNo
+        );
+    }
+
+    return customerCode;
 };
 
 const validateUserDataForUpdate = async (

@@ -46,6 +46,7 @@ const applicationRoutes = {
         deleteById: '/delete/:id',
         getAll: '/',
         getById: '/:id',
+        getLoanCode: '/getLoanCode',
     },
 };
 

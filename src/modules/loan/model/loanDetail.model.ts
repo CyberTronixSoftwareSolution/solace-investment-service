@@ -9,13 +9,9 @@ const LoanDetailSchema = new mongoose.Schema(
             required: [true, 'Loan Header is required'],
         },
 
-        loanNumber: {
-            type: Number,
-            required: [true, 'Loan Number is required'],
-        },
-
         dueDate: {
             type: Date,
+            index: true,
             required: [true, 'Due Date is required'],
         },
 
@@ -40,8 +36,7 @@ const LoanDetailSchema = new mongoose.Schema(
         },
 
         status: {
-            type: String,
-            enum: Object.values(WellKnownLoanPaymentStatus),
+            type: Number,
             default: WellKnownLoanPaymentStatus.PENDING,
             required: [true, 'Status is required'],
         },

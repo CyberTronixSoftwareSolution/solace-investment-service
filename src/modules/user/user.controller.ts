@@ -588,22 +588,8 @@ const getNewCustomerCode = async (req: Request, res: Response) => {
         const role = +req.params.roleId;
 
         const nextCode = await userService.getNextCustomerAdminCode(role);
-        let codeWithPrefix = '';
 
-        if (role === constants.USER.ROLES.CUSTOMER) {
-            codeWithPrefix = `${constants.CODEPREFIX.CUSTOMER}${nextCode
-                .toString()
-                .padStart(4, '0')}`;
-        } else if (
-            role === constants.USER.ROLES.ADMIN ||
-            role === constants.USER.ROLES.SUPERADMIN
-        ) {
-            codeWithPrefix = `${constants.CODEPREFIX.ADMIN}${nextCode
-                .toString()
-                .padStart(4, '0')}`;
-        }
-
-        CommonResponse(res, true, StatusCodes.OK, '', codeWithPrefix);
+        CommonResponse(res, true, StatusCodes.OK, '', nextCode);
     } catch (error) {
         throw error;
     }

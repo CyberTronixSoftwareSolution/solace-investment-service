@@ -7,6 +7,7 @@ import {
     deleteLoan,
     getAllLoans,
     getLoanById,
+    generateLoanCode,
 } from './loan.controller';
 
 const LoanRouter = Router();
@@ -20,6 +21,15 @@ LoanRouter.post(
         constants.USER.ROLES.ADMIN,
     ]),
     saveLoan
+);
+
+LoanRouter.get(
+    applicationRoutes.loan.getLoanCode,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    generateLoanCode
 );
 
 LoanRouter.delete(

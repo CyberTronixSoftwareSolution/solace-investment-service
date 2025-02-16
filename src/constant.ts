@@ -14,6 +14,7 @@ const constants = {
     CODEPREFIX: {
         CUSTOMER: 'CUS',
         ADMIN: 'ADM',
+        LOAN: 'LOA',
     },
 };
 

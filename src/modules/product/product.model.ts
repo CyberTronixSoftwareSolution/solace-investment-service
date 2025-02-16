@@ -114,4 +114,12 @@ const productSchema = new mongoose.Schema(
     }
 );
 
+// Indexes for optimized searching
+productSchema.index({ productCode: 1 }, { unique: true });
+productSchema.index({ status: 1 });
+productSchema.index({ _id: 1, status: 1 });
+productSchema.index({ createdBy: 1 });
+productSchema.index({ updatedBy: 1 });
+productSchema.index({ type: 1 });
+
 export default mongoose.model('Product', productSchema);

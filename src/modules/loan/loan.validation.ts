@@ -1,8 +1,10 @@
 import Joi from 'joi';
 
 const loanSchema = Joi.object({
-    loanNumber: Joi.number().required().messages({
-        'number.base': 'Loan Number is invalid',
+    loanNumber: Joi.string().required().messages({
+        'string.base': 'Loan Number is invalid',
+        'string.empty': 'Loan Number is required',
+        'string.required': 'Loan Number is required',
     }),
 
     transactionDate: Joi.date().required().messages({

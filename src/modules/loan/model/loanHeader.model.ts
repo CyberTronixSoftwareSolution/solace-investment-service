@@ -6,7 +6,7 @@ const LoanHeaderSchema = new mongoose.Schema(
     {
         // Loan Number
         loanNumber: {
-            type: Number,
+            type: String,
             required: [true, 'Loan Number is required'],
         },
 
@@ -41,6 +41,11 @@ const LoanHeaderSchema = new mongoose.Schema(
         rate: {
             type: Number,
             required: [true, 'Rate is required'],
+        },
+
+        rateAmount: {
+            type: Number,
+            default: 0,
         },
 
         amount: {
@@ -137,10 +142,14 @@ const LoanHeaderSchema = new mongoose.Schema(
             },
         },
 
+        totalPaidAmount: {
+            type: Number,
+            default: 0,
+        },
+
         status: {
             type: Number,
             required: [true, 'Status is required'],
-            enum: Object.values(WellKnownLoanStatus),
             default: WellKnownLoanStatus.PENDING,
         },
 
