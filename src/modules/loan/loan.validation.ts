@@ -13,7 +13,7 @@ const loanSchema = Joi.object({
         'date.required': 'Transaction Date is required',
     }),
 
-    reference: Joi.string().max(20).messages({
+    reference: Joi.string().allow('').allow(null).max(20).messages({
         'string.base': 'Reference is invalid',
         'string.max': 'Reference cannot be more than 20 characters',
     }),
@@ -56,4 +56,17 @@ const loanSchema = Joi.object({
         'any.required': 'Guarantors are required',
     }),
 });
-export default { loanSchema };
+
+const loanHandOverSchema = Joi.object({
+    transactionDate: Joi.date().required().messages({
+        'date.base': 'Transaction Date is invalid',
+        'date.empty': 'Transaction Date is required',
+        'date.required': 'Transaction Date is required',
+    }),
+
+    remark: Joi.string().max(500).messages({
+        'string.base': 'Reason is invalid',
+        'string.max': 'Reason cannot be more than 500 characters',
+    }),
+});
+export default { loanSchema, loanHandOverSchema };

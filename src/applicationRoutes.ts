@@ -44,9 +44,11 @@ const applicationRoutes = {
         base: '/loan',
         save: '/',
         deleteById: '/delete/:id',
+        getLoanDetails: '/getLoanDetails/:id',
         getAll: '/',
         getById: '/:id',
         getLoanCode: '/getLoanCode',
+        handOverLoan: '/handOverLoan/:id',
     },
 };
 

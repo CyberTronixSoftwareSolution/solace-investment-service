@@ -37,7 +37,7 @@ const findAllLoansByStatusInAndCreatedByOrRecoverOfficer = async (
     const query: any = { status: { $in: status } };
 
     if (userId) {
-        query.$or = [{ createdBy: userId }, { recoverOfficer: userId }];
+        query.$or = [{ recoverOfficer: userId }];
     }
 
     return await LoanHeader.find(query)
@@ -60,8 +60,19 @@ const findAllLoansByStatusInAndCreatedByOrRecoverOfficer = async (
         .lean();
 };
 
+const findLoanHeaderByIdAndStatusIn = async (
+    loanHeaderId: string,
+    status: number[]
+) =>
+    await LoanHeader.findOne({
+        _id: loanHeaderId,
+        status: { $in: status },
+    }).populate([
+        { path: 'product', select: '_id productName productCode type' },
+    ]);
 export default {
     save,
     generateLoanId,
     findAllLoansByStatusInAndCreatedByOrRecoverOfficer,
+    findLoanHeaderByIdAndStatusIn,
 };

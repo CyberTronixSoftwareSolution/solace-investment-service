@@ -15,6 +15,7 @@ import { WellKnownLoanStatus } from '../../util/enums/well-known-loan-status.enu
 import constants from '../../constant';
 import LoanGetAllResponseDto from './dto/loanGetAllResponseDto';
 import loanUtil from './loan.util';
+import LoanDetailGetAllResponseDto from './dto/loanDetailGetAllResponseDto';
 
 const saveLoan = async (req: Request, res: Response) => {
     const body: any = req.body;
@@ -89,6 +90,7 @@ const saveLoan = async (req: Request, res: Response) => {
         let dueDate = product.disbursementDate
             ? new Date(product.disbursementDate)
             : new Date();
+        dueDate.setHours(0, 0, 0, 0);
 
         let interestPerTerm = totalInterest / product.termsCount;
         let capital = product.amount / product.termsCount;
@@ -160,7 +162,37 @@ const deleteLoan = async (req: Request, res: Response) => {
     try {
         //start transaction in session
         session.startTransaction();
+        let loanHeader = await loanHeaderService.findLoanHeaderByIdAndStatusIn(
+            loanId,
+            [WellKnownLoanStatus.PENDING]
+        );
+
+        if (!loanHeader) {
+            throw new BadRequestError(
+                'Pending loan not found or loan already deleted!'
+            );
+        }
+
+        loanHeader.status = WellKnownLoanStatus.CANCELED;
+        loanHeader.updatedBy = req.auth.id;
+
+        await loanHeaderService.save(loanHeader, session);
+
+        // hard delete loan details
+        await loanDetailService.hardDeleteDetailByLoanHeaderId(
+            loanHeader._id,
+            session
+        );
+
         await session.commitTransaction();
+
+        CommonResponse(
+            res,
+            true,
+            StatusCodes.OK,
+            'Loan canceled successfully!',
+            loanHeader
+        );
     } catch (e) {
         //abort transaction
         await session.abortTransaction();
@@ -214,7 +246,24 @@ const getAllLoans = async (req: Request, res: Response) => {
     CommonResponse(res, true, StatusCodes.OK, '', response);
 };
 
-const getLoanById = async (req: Request, res: Response) => {};
+const getLoanById = async (req: Request, res: Response) => {
+    const loanId: string = req.params.id;
+
+    try {
+        let loanHeader = await loanHeaderService.findLoanHeaderByIdAndStatusIn(
+            loanId,
+            [
+                WellKnownLoanStatus.PENDING,
+                WellKnownLoanStatus.RUNNING,
+                WellKnownLoanStatus.COMPLETED,
+            ]
+        );
+
+        CommonResponse(res, true, StatusCodes.OK, '', loanHeader);
+    } catch (error) {
+        throw error;
+    }
+};
 
 const generateLoanCode = async (req: Request, res: Response) => {
     try {
@@ -226,4 +275,126 @@ const generateLoanCode = async (req: Request, res: Response) => {
     }
 };
 
-export { saveLoan, deleteLoan, getAllLoans, getLoanById, generateLoanCode };
+const getLoanDetails = async (req: Request, res: Response) => {
+    const loanId: string = req.params.id;
+
+    try {
+        let loanDetails = await loanDetailService.findAllByLoanHeaderId(loanId);
+
+        let response: LoanDetailGetAllResponseDto[] = [];
+
+        if (loanDetails.length > 0) {
+            response =
+                loanUtil.modelsToLoanDetailGetAllResponseDtos(loanDetails);
+        }
+
+        CommonResponse(res, true, StatusCodes.OK, '', response);
+    } catch (error) {
+        throw error;
+    }
+};
+
+const handOverLoan = async (req: Request, res: Response) => {
+    const loanId: string = req.params.id;
+    const body: any = req.body;
+    const auth: any = req.auth;
+
+    const { error } = loanValidation.loanHandOverSchema.validate(body);
+    if (error) {
+        throw new BadRequestError(error.message);
+    }
+
+    const session = await startSession();
+    try {
+        //start transaction in session
+        session.startTransaction();
+
+        let loanHeader: any =
+            await loanHeaderService.findLoanHeaderByIdAndStatusIn(loanId, [
+                WellKnownLoanStatus.PENDING,
+            ]);
+
+        if (!loanHeader) {
+            throw new BadRequestError(
+                'Pending loan not found or loan already hand over!'
+            );
+        }
+
+        loanHeader.disbursementDate = body.transactionDate;
+        loanHeader.handOverRemark = body.remark;
+        loanHeader.handOverBy = auth.id;
+        loanHeader.status = WellKnownLoanStatus.RUNNING;
+        loanHeader.updatedBy = auth.id;
+
+        await loanHeaderService.save(loanHeader, session);
+
+        // hard delete loan details
+        await loanDetailService.hardDeleteDetailByLoanHeaderId(
+            loanHeader._id,
+            session
+        );
+
+        // recalculate loan details
+        let totalInterest: number = loanHeader.rate;
+        if (loanHeader.isPercentage) {
+            totalInterest = (loanHeader.amount / 100) * loanHeader.rate;
+        }
+
+        let dueDate = new Date(body.transactionDate);
+        dueDate.setHours(0, 0, 0, 0);
+
+        let interestPerTerm = totalInterest / loanHeader.termsCount;
+        let capital = loanHeader.amount / loanHeader.termsCount;
+
+        for (let i = 1; i <= loanHeader.termsCount; i++) {
+            let loanDetail = new LoanDetail();
+
+            if (loanHeader.product.type == 'M') {
+                dueDate.setMonth(dueDate.getMonth() + 1);
+            } else if (loanHeader.product.type == 'W') {
+                dueDate.setDate(dueDate.getDate() + 7);
+            } else if (loanHeader.product.type == 'D') {
+                dueDate.setDate(dueDate.getDate() + 1);
+            }
+
+            loanDetail.loanHeader = loanHeader._id;
+            loanDetail.dueDate = dueDate;
+            loanDetail.interest = interestPerTerm;
+            loanDetail.capital = capital;
+            loanDetail.installment = capital + interestPerTerm;
+            loanDetail.detailIndex = i;
+            loanDetail.collectedBy = null;
+            loanDetail.createdBy = auth.id;
+            loanDetail.updatedBy = auth.id;
+
+            await loanDetailService.save(loanDetail, session);
+        }
+
+        await session.commitTransaction();
+
+        CommonResponse(
+            res,
+            true,
+            StatusCodes.OK,
+            'Loan hand over successfully!',
+            loanHeader
+        );
+    } catch (e) {
+        //abort transaction
+        await session.abortTransaction();
+        throw e;
+    } finally {
+        //end session
+        session.endSession();
+    }
+};
+
+export {
+    saveLoan,
+    deleteLoan,
+    getAllLoans,
+    getLoanById,
+    generateLoanCode,
+    getLoanDetails,
+    handOverLoan,
+};

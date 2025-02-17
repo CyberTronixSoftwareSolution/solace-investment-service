@@ -71,6 +71,10 @@ const LoanDetailSchema = new mongoose.Schema(
             default: 0,
         },
 
+        receipt: {
+            type: String,
+        },
+
         collectedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',

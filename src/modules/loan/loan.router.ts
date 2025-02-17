@@ -8,11 +8,11 @@ import {
     getAllLoans,
     getLoanById,
     generateLoanCode,
+    getLoanDetails,
+    handOverLoan,
 } from './loan.controller';
 
 const LoanRouter = Router();
-
-//     getById: '/:id',
 
 LoanRouter.post(
     applicationRoutes.loan.save,
@@ -32,6 +32,15 @@ LoanRouter.get(
     generateLoanCode
 );
 
+LoanRouter.get(
+    applicationRoutes.loan.getLoanDetails,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    getLoanDetails
+);
+
 LoanRouter.delete(
     applicationRoutes.loan.deleteById,
     authMiddleware.authorize([
@@ -39,6 +48,15 @@ LoanRouter.delete(
         constants.USER.ROLES.ADMIN,
     ]),
     deleteLoan
+);
+
+LoanRouter.put(
+    applicationRoutes.loan.handOverLoan,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    handOverLoan
 );
 
 LoanRouter.get(

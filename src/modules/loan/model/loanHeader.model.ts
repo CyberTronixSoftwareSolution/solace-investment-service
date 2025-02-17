@@ -142,6 +142,20 @@ const LoanHeaderSchema = new mongoose.Schema(
             },
         },
 
+        handOverRemark: {
+            type: String,
+            maxlength: [
+                500,
+                'Hand Over Remark cannot be more than 500 characters',
+            ],
+            default: '',
+        },
+
+        handOverBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        },
+
         totalPaidAmount: {
             type: Number,
             default: 0,
