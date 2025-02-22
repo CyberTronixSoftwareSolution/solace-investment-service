@@ -1,5 +1,6 @@
 export enum WellKnownLoanPaymentStatus {
     PENDING = 1,
-    PAYED = 2,
-    DELETED = 3,
+    PAID = 2,
+    SHIFTED = 3,
+    DELETED = 4,
 }

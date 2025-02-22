@@ -16,6 +16,10 @@ import constants from '../../constant';
 import LoanGetAllResponseDto from './dto/loanGetAllResponseDto';
 import loanUtil from './loan.util';
 import LoanDetailGetAllResponseDto from './dto/loanDetailGetAllResponseDto';
+import PaymentBulkSearchResponseDto from './dto/paymentBulkSearchResponseDto';
+import { WellKnownLoanPaymentStatus } from '../../util/enums/well-known-loan-payment-status.enum';
+import userService from '../user/user.service';
+import PaymentSearchResponseDto from './dto/paymentSearchResponseDto';
 
 const saveLoan = async (req: Request, res: Response) => {
     const body: any = req.body;
@@ -341,7 +345,6 @@ const handOverLoan = async (req: Request, res: Response) => {
         }
 
         let dueDate = new Date(body.transactionDate);
-        dueDate.setHours(0, 0, 0, 0);
 
         let interestPerTerm = totalInterest / loanHeader.termsCount;
         let capital = loanHeader.amount / loanHeader.termsCount;
@@ -389,6 +392,466 @@ const handOverLoan = async (req: Request, res: Response) => {
     }
 };
 
+const searchBulkReceipt = async (req: Request, res: Response) => {
+    const body: any = req.body;
+    const auth: any = req.auth;
+
+    const { error } = loanValidation.receiptBulkSearchSchema.validate(body);
+    if (error) {
+        throw new BadRequestError(error.message);
+    }
+
+    try {
+        let loanPaymentDetails: any[] = [];
+        if (auth.role == constants.USER.ROLES.SUPERADMIN) {
+            loanPaymentDetails = await loanDetailService.searchPaymentByDueDate(
+                body.transactionDate,
+                ''
+            );
+        } else {
+            loanPaymentDetails = await loanDetailService.searchPaymentByDueDate(
+                body.transactionDate,
+                auth?.id
+            );
+        }
+
+        let response: PaymentBulkSearchResponseDto[] = [];
+
+        response =
+            loanUtil.modelsToPaymentBulkSearchResponseDtos(loanPaymentDetails);
+
+        // if body.product != to "-1" search by product
+        if (body.product != '-1') {
+            response = response.filter(
+                (item) => item.productId == body.product
+            );
+        }
+        // if body.searchType != to "-1" search by searchType
+
+        if (body.searchType != '-1') {
+            switch (body.searchType) {
+                case '1':
+                    response = response.filter((item) =>
+                        item.nicNumber.toLowerCase().includes(body.searchCode)
+                    );
+                    break;
+                case '2':
+                    response = response.filter((item) =>
+                        item.customerCode
+                            .toLowerCase()
+                            .includes(body.searchCode)
+                    );
+                    break;
+                case '3':
+                    response = response.filter((item) =>
+                        item.loanNo.toLowerCase().includes(body.searchCode)
+                    );
+                    break;
+            }
+        }
+
+        CommonResponse(res, true, StatusCodes.OK, '', response);
+    } catch (error) {
+        throw error;
+    }
+};
+
+const payLoanInstallment = async (req: Request, res: Response) => {
+    const installmentId: string = req.params.id;
+    const body: any = req.body;
+    const auth: any = req.auth;
+
+    const { error } = loanValidation.installmentPaymentSchema.validate(body);
+    if (error) {
+        throw new BadRequestError(error.message);
+    }
+
+    // check loan detail exist and status pending
+    let loanDetail = await loanDetailService.findLoanDetailByIdAndStatusIn(
+        installmentId,
+        [WellKnownLoanPaymentStatus.PENDING]
+    );
+
+    if (!loanDetail) {
+        throw new BadRequestError('Installment not found or already paid!');
+    }
+
+    // check loan header exist and status running
+    let loanHeader = await loanHeaderService.findLoanHeaderByIdAndStatusIn(
+        loanDetail.loanHeader.toString(),
+        [WellKnownLoanStatus.RUNNING]
+    );
+
+    if (!loanHeader) {
+        throw new BadRequestError(
+            'Running loan not found related to installment!'
+        );
+    }
+
+    // loan detail related to loan header for future use
+    let loanDetails = await loanDetailService.findAllByLoanHeaderId(
+        loanHeader._id.toString()
+    );
+
+    // check loan validations for loan payment
+    // 1. check previous installment is paid or shifted to next installment (if installment is not first installment)
+    if (loanDetail.detailIndex > 1) {
+        let previousLoanDetail = loanDetails.find(
+            (item) => item.detailIndex == loanDetail.detailIndex - 1
+        );
+
+        if (
+            previousLoanDetail?.status != WellKnownLoanPaymentStatus.PAID &&
+            previousLoanDetail?.status != WellKnownLoanPaymentStatus.SHIFTED
+        ) {
+            throw new BadRequestError(
+                'Previous installment should be paid or shifted before payment!'
+            );
+        }
+    }
+
+    let remainingBalance =
+        (loanHeader?.loanSummary?.agreedAmount || 0) -
+        loanHeader?.totalPaidAmount;
+
+    // 2. last installment payment amount should be equal to remaining balance
+    if (loanDetail.detailIndex == loanHeader.termsCount) {
+        if (remainingBalance != body.payedAmount) {
+            throw new BadRequestError(
+                `This is last installment so payment amount should be equal to remaining balance (Remaining Balance: ${remainingBalance})!`
+            );
+        }
+    }
+
+    // 3.  check remaining balance is greater than payed amount
+    if (remainingBalance < body.payedAmount) {
+        throw new BadRequestError(
+            `Payment amount should be less than loan remaining balance (Remaining Balance: ${remainingBalance})!`
+        );
+    }
+
+    let workingDate = new Date();
+    workingDate.setHours(0, 0, 0, 0);
+
+    const session = await startSession();
+
+    try {
+        //start transaction in session
+        session.startTransaction();
+
+        // installment amount = starting balance + installment amount
+        let paymentAmount = body.payedAmount;
+        let actualPaymentAmount = body.payedAmount;
+        let detailIndex = loanDetail.detailIndex;
+        let condition = true;
+        let counter = 1;
+        let receiptNo = `${loanHeader.loanNumber}-${loanDetail.detailIndex}`;
+
+        while (condition) {
+            let loanDetailData =
+                loanDetails.find((item) => item.detailIndex == detailIndex) ||
+                null;
+
+            let installmentAmount = 0;
+            if (loanDetailData != null) {
+                if (counter == 1) {
+                    installmentAmount = parseFloat(
+                        (
+                            loanDetailData.installment +
+                            loanDetailData.openingBalance
+                        ).toFixed(2)
+                    );
+                } else {
+                    installmentAmount = parseFloat(
+                        loanDetailData.installment.toFixed(2)
+                    );
+                }
+
+                if (paymentAmount == installmentAmount) {
+                    // if payment amount == installment amount
+                    // 1. update loan header payment total
+                    // 2. update payment detail status to paid
+                    loanHeader.totalPaidAmount += paymentAmount;
+                    loanHeader.updatedBy = auth.id;
+
+                    if (loanDetail.detailIndex == loanHeader.termsCount) {
+                        loanHeader.status = WellKnownLoanStatus.COMPLETED;
+                    }
+
+                    await loanHeaderService.save(loanHeader, session);
+
+                    loanDetailData.status = WellKnownLoanPaymentStatus.PAID;
+                    loanDetailData.closingBalance = 0;
+                    loanDetailData.paymentDate = workingDate;
+                    loanDetailData.paymentAmount = paymentAmount;
+                    loanDetailData.actualPaymentAmount = actualPaymentAmount;
+                    loanDetailData.receipt = receiptNo;
+                    loanDetailData.updatedBy = auth.id;
+                    loanDetailData.collectedBy = auth.id;
+
+                    if (counter == 1) {
+                        loanDetailData.isActualPayment = true;
+                    } else {
+                        loanDetailData.isActualPayment = false;
+                    }
+
+                    await loanDetailService.save(loanDetailData, session);
+
+                    condition = false;
+                } else if (paymentAmount > installmentAmount) {
+                    // if payment amount > installment amount
+                    // 1. update loan header payment total
+                    // 2. update payment detail status to paid and update next installment start balance
+                    loanHeader.totalPaidAmount += installmentAmount;
+                    loanHeader.updatedBy = auth.id;
+
+                    await loanHeaderService.save(loanHeader, session);
+
+                    loanDetailData.status = WellKnownLoanPaymentStatus.PAID;
+                    loanDetailData.closingBalance =
+                        installmentAmount - paymentAmount;
+                    loanDetailData.paymentDate = workingDate;
+                    loanDetailData.paymentAmount = installmentAmount;
+                    loanDetailData.actualPaymentAmount = actualPaymentAmount;
+                    loanDetailData.receipt = receiptNo;
+                    loanDetailData.updatedBy = auth.id;
+
+                    if (counter == 1) {
+                        loanDetailData.isActualPayment = true;
+                    } else {
+                        loanDetailData.isActualPayment = false;
+                    }
+
+                    await loanDetailService.save(loanDetailData, session);
+
+                    // update next installment start balance
+                    let nextLoanDetailData =
+                        loanDetails.find(
+                            (item) => item.detailIndex == detailIndex + 1
+                        ) || null;
+
+                    if (nextLoanDetailData != null) {
+                        nextLoanDetailData.openingBalance =
+                            installmentAmount - paymentAmount;
+                        nextLoanDetailData.updatedBy = auth.id;
+
+                        await loanDetailService.save(
+                            nextLoanDetailData,
+                            session
+                        );
+                    }
+
+                    paymentAmount -= installmentAmount;
+                    detailIndex += 1;
+                    counter += 1;
+                } else if (paymentAmount < installmentAmount) {
+                    // if payment amount < installment amount
+                    // 1. update loan header payment total
+                    // 2. update payment detail status to paid and update next installment start balance
+                    loanHeader.totalPaidAmount += paymentAmount;
+                    loanHeader.updatedBy = auth.id;
+
+                    await loanHeaderService.save(loanHeader, session);
+                    loanDetailData.updatedBy = auth.id;
+
+                    if (counter == 1) {
+                        loanDetailData.closingBalance =
+                            installmentAmount - paymentAmount;
+                        loanDetailData.receipt = receiptNo;
+                        loanDetailData.paymentDate = workingDate;
+                        loanDetailData.paymentAmount = paymentAmount;
+                        loanDetailData.actualPaymentAmount =
+                            actualPaymentAmount;
+                        loanDetailData.isActualPayment = true;
+                        loanDetailData.collectedBy = auth.id;
+
+                        loanDetailData.status = WellKnownLoanPaymentStatus.PAID;
+
+                        await loanDetailService.save(loanDetailData, session);
+
+                        // update next installment start balance
+                        let nextLoanDetailData =
+                            loanDetails.find(
+                                (item) => item.detailIndex == detailIndex + 1
+                            ) || null;
+
+                        if (nextLoanDetailData != null) {
+                            nextLoanDetailData.openingBalance =
+                                installmentAmount - paymentAmount;
+                            nextLoanDetailData.updatedBy = auth.id;
+
+                            await loanDetailService.save(
+                                nextLoanDetailData,
+                                session
+                            );
+                        }
+                    }
+
+                    condition = false;
+                }
+            } else {
+                condition = false;
+            }
+        }
+
+        await session.commitTransaction();
+    } catch (e) {
+        //abort transaction
+        await session.abortTransaction();
+        throw e;
+    } finally {
+        //end session
+        session.endSession();
+    }
+
+    CommonResponse(
+        res,
+        true,
+        StatusCodes.OK,
+        'Installment paid successfully!',
+        null
+    );
+};
+
+const printReceipt = async (req: Request, res: Response) => {
+    const installmentId: string = req.params.id;
+    const auth: any = req.auth;
+
+    try {
+        const printedUserData: any = await userService.findById(auth.id);
+
+        let loanDetail: any =
+            await loanDetailService.findLoanDetailByIdAndStatusIn(
+                installmentId,
+                [WellKnownLoanPaymentStatus.PAID]
+            );
+
+        if (!loanDetail) {
+            throw new BadRequestError('Installment not found or not paid!');
+        }
+
+        let loanHeader: any =
+            await loanHeaderService.findLoanHeaderByIdAndStatusIn(
+                loanDetail.loanHeader.toString(),
+                [
+                    WellKnownLoanStatus.RUNNING,
+                    WellKnownLoanStatus.COMPLETED,
+                    WellKnownLoanStatus.PENDING,
+                ]
+            );
+        if (!loanHeader) {
+            throw new Error('Loan is not running');
+        }
+
+        let loanDetails = await loanDetailService.findAllByLoanHeaderId(
+            loanDetail.loanHeader.toString()
+        );
+
+        let outstandingAmount = loanHeader?.loanSummary?.agreedAmount || 0;
+        let paidAmount = loanDetail?.actualPaymentAmount;
+        let totalPaidAmount = 0;
+        loanDetails.forEach((item) => {
+            if (
+                item.detailIndex <= loanDetail.detailIndex &&
+                item.isActualPayment
+            ) {
+                totalPaidAmount += item.actualPaymentAmount;
+            }
+        });
+
+        let balance = outstandingAmount - totalPaidAmount;
+
+        let response = {
+            id: loanDetail._id.toString(),
+            receiptNo: loanDetail.receipt || '',
+            receiptDate: loanDetail.paymentDate || new Date(),
+            reference: loanHeader.reference || '',
+            customerId: loanHeader.borrower?._id,
+            cusCode: `${loanHeader?.borrower?.customerCode}/${loanHeader?.borrower?.nicNumber}`,
+            cusName: `${loanHeader?.borrower?.initial} ${loanHeader?.borrower?.firstName} ${loanHeader?.borrower?.lastName}`,
+            nicNumber: loanHeader?.borrower?.nicNumber,
+            loanId: loanHeader._id.toString(),
+            loanNo: loanHeader.loanNumber,
+            outStandingAmount: outstandingAmount,
+            paidAmount: paidAmount,
+            balanceAmount: balance,
+            description: 'Loan installment payment',
+            printedUser: `(${printedUserData.customerCode})${printedUserData.firstName} ${printedUserData.lastName}`,
+        };
+
+        CommonResponse(res, true, StatusCodes.OK, '', response);
+    } catch (error) {
+        throw error;
+    }
+};
+
+const searchReceipt = async (req: Request, res: Response) => {
+    const body: any = req.body;
+    const auth: any = req.auth;
+
+    const { error } = loanValidation.receiptSearchSchema.validate(body);
+    if (error) {
+        throw new BadRequestError(error.message);
+    }
+
+    try {
+        let loanReceipts: any[] = [];
+        if (auth.role == constants.USER.ROLES.SUPERADMIN) {
+            loanReceipts =
+                await loanDetailService.searchPaymentReceiptByStartDateAndEndDate(
+                    body.startDate,
+                    body.endDate,
+                    ''
+                );
+        } else {
+            loanReceipts =
+                await loanDetailService.searchPaymentReceiptByStartDateAndEndDate(
+                    body.startDate,
+                    body.endDate,
+                    auth?.id
+                );
+        }
+
+        let response: PaymentSearchResponseDto[] = [];
+
+        response = loanUtil.modelsToPaymentSearchResponseDtos(loanReceipts);
+
+        // if body.product != to "-1" search by product
+        if (body.product != '-1') {
+            response = response.filter(
+                (item) => item.productId == body.product
+            );
+        }
+        // if body.searchType != to "-1" search by searchType
+
+        if (body.searchType != '-1') {
+            switch (body.searchType) {
+                case '1':
+                    response = response.filter((item) =>
+                        item.nicNumber.toLowerCase().includes(body.searchCode)
+                    );
+                    break;
+                case '2':
+                    response = response.filter((item) =>
+                        item.customerCode
+                            .toLowerCase()
+                            .includes(body.searchCode)
+                    );
+                    break;
+                case '3':
+                    response = response.filter((item) =>
+                        item.loanNo.toLowerCase().includes(body.searchCode)
+                    );
+                    break;
+            }
+        }
+
+        CommonResponse(res, true, StatusCodes.OK, '', response);
+    } catch (error) {
+        throw error;
+    }
+};
+
 export {
     saveLoan,
     deleteLoan,
@@ -397,4 +860,8 @@ export {
     generateLoanCode,
     getLoanDetails,
     handOverLoan,
+    searchBulkReceipt,
+    payLoanInstallment,
+    printReceipt,
+    searchReceipt,
 };

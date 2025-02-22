@@ -64,9 +64,78 @@ const loanHandOverSchema = Joi.object({
         'date.required': 'Transaction Date is required',
     }),
 
-    remark: Joi.string().max(500).messages({
+    remark: Joi.string().allow('').allow(null).max(500).messages({
         'string.base': 'Reason is invalid',
         'string.max': 'Reason cannot be more than 500 characters',
     }),
 });
-export default { loanSchema, loanHandOverSchema };
+
+const receiptBulkSearchSchema = Joi.object({
+    transactionDate: Joi.date().required().messages({
+        'date.base': 'Transaction Date is invalid',
+        'date.empty': 'Transaction Date is required',
+        'date.required': 'Transaction Date is required',
+    }),
+
+    product: Joi.string().required().messages({
+        'object.base': 'Product is invalid',
+        'object.empty': 'Product is required',
+        'object.required': 'Product is required',
+    }),
+
+    searchType: Joi.string().required().messages({
+        'string.base': 'Search Type is invalid',
+        'string.empty': 'Search Type is required',
+        'string.required': 'Search Type is required',
+    }),
+
+    searchCode: Joi.string().allow(null).allow('').messages({
+        'string.base': 'Search Code is invalid',
+    }),
+});
+
+const installmentPaymentSchema = Joi.object({
+    payedAmount: Joi.number().required().messages({
+        'number.base': 'Amount is invalid',
+        'number.empty': 'Amount is required',
+        'number.required': 'Amount is required',
+    }),
+});
+
+const receiptSearchSchema = Joi.object({
+    startDate: Joi.date().required().messages({
+        'date.base': 'Start Date is invalid',
+        'date.empty': 'Start Date is required',
+        'date.required': 'Start Date is required',
+    }),
+
+    endDate: Joi.date().required().messages({
+        'date.base': 'End Date is invalid',
+        'date.empty': 'End Date is required',
+        'date.required': 'End Date is required',
+    }),
+
+    product: Joi.string().required().messages({
+        'object.base': 'Product is invalid',
+        'object.empty': 'Product is required',
+        'object.required': 'Product is required',
+    }),
+
+    searchType: Joi.string().required().messages({
+        'string.base': 'Search Type is invalid',
+        'string.empty': 'Search Type is required',
+        'string.required': 'Search Type is required',
+    }),
+
+    searchCode: Joi.string().allow(null).allow('').messages({
+        'string.base': 'Search Code is invalid',
+    }),
+});
+
+export default {
+    loanSchema,
+    loanHandOverSchema,
+    receiptBulkSearchSchema,
+    installmentPaymentSchema,
+    receiptSearchSchema,
+};

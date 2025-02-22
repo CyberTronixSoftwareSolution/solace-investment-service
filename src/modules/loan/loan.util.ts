@@ -3,6 +3,8 @@ import { WellKnownLoanStatus } from '../../util/enums/well-known-loan-status.enu
 import helperUtil from '../../util/helper.util';
 import LoanDetailGetAllResponseDto from './dto/loanDetailGetAllResponseDto';
 import LoanGetAllResponseDto from './dto/loanGetAllResponseDto';
+import PaymentBulkSearchResponseDto from './dto/paymentBulkSearchResponseDto';
+import PaymentSearchResponseDto from './dto/paymentSearchResponseDto';
 
 const modelToLoanGetAllResponseDto = (loan: any): LoanGetAllResponseDto => {
     return {
@@ -31,6 +33,40 @@ const modelsToLoanGetAllResponseDtos = (
     loans: any[]
 ): LoanGetAllResponseDto[] => {
     return loans.map((loan) => modelToLoanGetAllResponseDto(loan));
+};
+
+const modelToPaymentSearchResponseDto = (
+    loan: any
+): PaymentSearchResponseDto => {
+    return {
+        detailId: loan?._id,
+        headerId: loan?.loanHeader?._id,
+        // Customer
+        customerId: loan?.loanHeader?.borrower?._id,
+        customerName: `${loan?.loanHeader?.borrower?.initial} ${loan?.loanHeader?.borrower?.firstName} ${loan?.loanHeader?.borrower?.lastName}`,
+        customerCode: loan?.loanHeader?.borrower?.customerCode,
+        nicNumber: loan?.loanHeader?.borrower?.nicNumber,
+        // Loan
+        productName: loan?.loanHeader?.product?.productName,
+        productId: loan?.loanHeader?.product?._id,
+        loanNo: loan?.loanHeader?.loanNumber,
+        paymentAmount: loan?.paymentAmount,
+        loanAmount: loan?.loanHeader?.amount,
+        termInstallAmount: loan?.installment + loan?.openingBalance,
+        installment: loan?.installment,
+        status: loan?.status,
+        statusName: helperUtil.getNameFromEnum(
+            WellKnownLoanPaymentStatus,
+            loan.status
+        ),
+        paymentDate: loan?.paymentDate,
+    };
+};
+
+const modelsToPaymentSearchResponseDtos = (
+    loans: any[]
+): PaymentSearchResponseDto[] => {
+    return loans.map((loan) => modelToPaymentSearchResponseDto(loan));
 };
 
 const modelToLoanDetailGetAllResponseDto = (
@@ -62,8 +98,47 @@ const modelsToLoanDetailGetAllResponseDtos = (
     return loans.map((loan) => modelToLoanDetailGetAllResponseDto(loan));
 };
 
+const modelToPaymentBulkSearchResponseDto = (
+    loan: any
+): PaymentBulkSearchResponseDto => {
+    return {
+        detailId: loan?._id,
+        headerId: loan?.loanHeader?._id,
+        // Customer
+        customerId: loan?.loanHeader?.borrower?._id,
+        customerName: `${loan?.loanHeader?.borrower?.initial} ${loan?.loanHeader?.borrower?.firstName} ${loan?.loanHeader?.borrower?.lastName}`,
+        customerCode: loan?.loanHeader?.borrower?.customerCode,
+        nicNumber: loan?.loanHeader?.borrower?.nicNumber,
+        // Loan
+        productName: loan?.loanHeader?.product?.productName,
+        productId: loan?.loanHeader?.product?._id,
+        loanNo: loan?.loanHeader?.loanNumber,
+        paymentAmount: loan?.paymentAmount,
+        loanAmount: loan?.loanHeader?.amount,
+        loanBalance:
+            loan?.loanHeader?.loanSummary?.agreedAmount -
+            loan?.loanHeader?.totalPaidAmount,
+        termInstallAmount: loan?.installment + loan?.openingBalance,
+        isLastInstallment: loan?.detailIndex == loan?.loanHeader?.termsCount,
+        installment: loan?.installment,
+        status: loan?.status,
+        statusName: helperUtil.getNameFromEnum(
+            WellKnownLoanPaymentStatus,
+            loan.status
+        ),
+    };
+};
+
+const modelsToPaymentBulkSearchResponseDtos = (
+    loans: any[]
+): PaymentBulkSearchResponseDto[] => {
+    return loans.map((loan) => modelToPaymentBulkSearchResponseDto(loan));
+};
+
 export default {
     modelToLoanGetAllResponseDto,
     modelsToLoanGetAllResponseDtos,
     modelsToLoanDetailGetAllResponseDtos,
+    modelsToPaymentBulkSearchResponseDtos,
+    modelsToPaymentSearchResponseDtos,
 };

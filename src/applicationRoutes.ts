@@ -49,6 +49,10 @@ const applicationRoutes = {
         getById: '/:id',
         getLoanCode: '/getLoanCode',
         handOverLoan: '/handOverLoan/:id',
+        payLoanInstallment: '/payInstallment/:id',
+        printReceipt: '/printReceipt/:id',
+        searchReceiptBulk: '/searchReceiptBulk',
+        searchReceipt: '/searchReceipt',
     },
 };
 

@@ -69,6 +69,10 @@ const findLoanHeaderByIdAndStatusIn = async (
         status: { $in: status },
     }).populate([
         { path: 'product', select: '_id productName productCode type' },
+        {
+            path: 'borrower',
+            select: '_id title initial firstName lastName customerCode nicNumber',
+        },
     ]);
 export default {
     save,

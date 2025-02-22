@@ -10,6 +10,10 @@ import {
     generateLoanCode,
     getLoanDetails,
     handOverLoan,
+    searchBulkReceipt,
+    payLoanInstallment,
+    printReceipt,
+    searchReceipt,
 } from './loan.controller';
 
 const LoanRouter = Router();
@@ -21,6 +25,42 @@ LoanRouter.post(
         constants.USER.ROLES.ADMIN,
     ]),
     saveLoan
+);
+
+LoanRouter.post(
+    applicationRoutes.loan.searchReceiptBulk,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    searchBulkReceipt
+);
+
+LoanRouter.post(
+    applicationRoutes.loan.searchReceipt,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    searchReceipt
+);
+
+LoanRouter.put(
+    applicationRoutes.loan.payLoanInstallment,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    payLoanInstallment
+);
+
+LoanRouter.get(
+    applicationRoutes.loan.printReceipt,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    printReceipt
 );
 
 LoanRouter.get(
