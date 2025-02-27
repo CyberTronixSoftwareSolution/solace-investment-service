@@ -576,6 +576,7 @@ const payLoanInstallment = async (req: Request, res: Response) => {
 
                     if (loanDetail.detailIndex == loanHeader.termsCount) {
                         loanHeader.status = WellKnownLoanStatus.COMPLETED;
+                        loanHeader.completedDate = new Date();
                     }
 
                     await loanHeaderService.save(loanHeader, session);

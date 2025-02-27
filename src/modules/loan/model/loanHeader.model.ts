@@ -62,6 +62,10 @@ const LoanHeaderSchema = new mongoose.Schema(
             type: Date,
         },
 
+        completedDate: {
+            type: Date,
+        },
+
         reason: {
             type: String,
             required: [true, 'Reason is required'],

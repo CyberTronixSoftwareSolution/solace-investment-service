@@ -5,6 +5,7 @@ import UserRouter from './modules/user/user.router';
 import AuthRouter from './modules/auth/auth.router';
 import ProductRouter from './modules/product/product.router';
 import LoanRouter from './modules/loan/loan.router';
+import ReportRouter from './modules/report/report.router';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use(applicationRoutes.user.base, UserRouter);
 router.use(applicationRoutes.auth.base, AuthRouter);
 router.use(applicationRoutes.product.base, ProductRouter);
 router.use(applicationRoutes.loan.base, LoanRouter);
+router.use(applicationRoutes.report.base, ReportRouter);
 
 export default router;

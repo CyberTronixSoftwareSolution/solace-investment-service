@@ -54,6 +54,12 @@ const applicationRoutes = {
         searchReceiptBulk: '/searchReceiptBulk',
         searchReceipt: '/searchReceipt',
     },
+
+    report: {
+        base: '/report',
+        repaymentReport: '/repaymentReport',
+        deductionChargeReport: '/deductionChargeReport',
+    },
 };
 
 export default applicationRoutes;

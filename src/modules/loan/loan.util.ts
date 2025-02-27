@@ -50,9 +50,16 @@ const modelToPaymentSearchResponseDto = (
         productName: loan?.loanHeader?.product?.productName,
         productId: loan?.loanHeader?.product?._id,
         loanNo: loan?.loanHeader?.loanNumber,
-        paymentAmount: loan?.paymentAmount,
+        paymentAmount: loan?.isActualPayment
+            ? loan?.actualPaymentAmount
+            : loan?.paymentAmount,
         loanAmount: loan?.loanHeader?.amount,
-        termInstallAmount: loan?.installment + loan?.openingBalance,
+        termInstallAmount:
+            loan?.openingBalance > 0
+                ? loan?.installment + loan?.openingBalance
+                : Math.abs(loan?.openingBalance) > loan?.installment
+                ? loan?.installment
+                : loan?.openingBalance + loan?.installment,
         installment: loan?.installment,
         status: loan?.status,
         statusName: helperUtil.getNameFromEnum(
@@ -113,12 +120,20 @@ const modelToPaymentBulkSearchResponseDto = (
         productName: loan?.loanHeader?.product?.productName,
         productId: loan?.loanHeader?.product?._id,
         loanNo: loan?.loanHeader?.loanNumber,
-        paymentAmount: loan?.paymentAmount,
+        paymentAmount:
+            (loan.isActualPayment
+                ? loan?.actualPaymentAmount
+                : loan?.paymentAmount) || 0,
         loanAmount: loan?.loanHeader?.amount,
         loanBalance:
             loan?.loanHeader?.loanSummary?.agreedAmount -
             loan?.loanHeader?.totalPaidAmount,
-        termInstallAmount: loan?.installment + loan?.openingBalance,
+        termInstallAmount:
+            loan?.openingBalance > 0
+                ? loan?.installment + loan?.openingBalance
+                : Math.abs(loan?.openingBalance) > loan?.installment
+                ? loan?.installment
+                : loan?.openingBalance + loan?.installment,
         isLastInstallment: loan?.detailIndex == loan?.loanHeader?.termsCount,
         installment: loan?.installment,
         status: loan?.status,
