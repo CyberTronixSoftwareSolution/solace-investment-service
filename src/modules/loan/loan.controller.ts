@@ -853,6 +853,132 @@ const searchReceipt = async (req: Request, res: Response) => {
     }
 };
 
+const shiftLoanInstallment = async (req: Request, res: Response) => {
+    const installmentId: string = req.params.id;
+    const isUndo = req.query.isUndo == 'true' ? true : false || false;
+    const auth: any = req.auth;
+
+    // check loan detail exist and status pending
+    let loanDetail: any = isUndo
+        ? await loanDetailService.findLoanDetailByIdAndStatusIn(installmentId, [
+              WellKnownLoanPaymentStatus.SHIFTED,
+          ])
+        : await loanDetailService.findLoanDetailByIdAndStatusIn(installmentId, [
+              WellKnownLoanPaymentStatus.PENDING,
+          ]);
+
+    let message = '';
+    if (!loanDetail) {
+        message = isUndo
+            ? 'Shifted installment not found!'
+            : 'Installment not found!';
+    }
+
+    if (!isUndo) {
+        if (loanDetail.status == WellKnownLoanPaymentStatus.PAID) {
+            message = 'Installment already paid!';
+        } else if (loanDetail.status == WellKnownLoanPaymentStatus.SHIFTED) {
+            message = 'Installment already shifted!';
+        }
+    }
+
+    if (message) {
+        throw new BadRequestError(message);
+    }
+
+    let loanHeader = await loanHeaderService.findLoanHeaderByIdAndStatusIn(
+        loanDetail.loanHeader.toString(),
+        [WellKnownLoanStatus.RUNNING]
+    );
+
+    if (!loanHeader) {
+        throw new BadRequestError(
+            'Running loan not found related to installment!'
+        );
+    }
+
+    if (!isUndo && loanHeader.termsCount == loanDetail.detailIndex) {
+        throw new BadRequestError('Last installment cannot be shifted!');
+    }
+
+    let loanDetails = await loanDetailService.findAllByLoanHeaderId(
+        loanHeader._id.toString()
+    );
+
+    let nextDetail = loanDetails.find(
+        (item) => item.detailIndex == loanDetail.detailIndex + 1
+    );
+
+    if (!nextDetail) {
+        throw new BadRequestError('Last installment cannot be shifted!');
+    }
+
+    if (loanDetail.detailIndex > 1) {
+        let previousLoanDetail = loanDetails.find(
+            (item) => item.detailIndex == loanDetail.detailIndex - 1
+        );
+
+        if (
+            previousLoanDetail?.status != WellKnownLoanPaymentStatus.PAID &&
+            previousLoanDetail?.status != WellKnownLoanPaymentStatus.SHIFTED
+        ) {
+            throw new BadRequestError(
+                'Previous installment should be paid or shifted before shift this installment!'
+            );
+        }
+    }
+
+    const session = await startSession();
+    try {
+        //start transaction in session
+        session.startTransaction();
+
+        if (isUndo) {
+            loanDetail.status = WellKnownLoanPaymentStatus.PENDING;
+            loanDetail.updatedBy = auth.id;
+            loanDetail.closingBalance = 0;
+
+            await loanDetailService.save(loanDetail, session);
+
+            nextDetail.openingBalance = 0;
+            nextDetail.updatedBy = auth.id;
+
+            await loanDetailService.save(nextDetail, session);
+        } else {
+            let installmentAmount =
+                loanDetail.installment + loanDetail.openingBalance;
+
+            loanDetail.status = WellKnownLoanPaymentStatus.SHIFTED;
+            loanDetail.updatedBy = auth.id;
+            loanDetail.closingBalance = installmentAmount;
+
+            await loanDetailService.save(loanDetail, session);
+
+            nextDetail.openingBalance = installmentAmount;
+            nextDetail.updatedBy = auth.id;
+
+            await loanDetailService.save(nextDetail, session);
+        }
+
+        await session.commitTransaction();
+
+        CommonResponse(
+            res,
+            true,
+            StatusCodes.OK,
+            'Installment shifted successfully!',
+            ''
+        );
+    } catch (e) {
+        //abort transaction
+        await session.abortTransaction();
+        throw e;
+    } finally {
+        //end session
+        session.endSession();
+    }
+};
+
 export {
     saveLoan,
     deleteLoan,
@@ -865,4 +991,5 @@ export {
     payLoanInstallment,
     printReceipt,
     searchReceipt,
+    shiftLoanInstallment,
 };

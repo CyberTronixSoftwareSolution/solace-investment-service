@@ -14,6 +14,7 @@ import {
     payLoanInstallment,
     printReceipt,
     searchReceipt,
+    shiftLoanInstallment,
 } from './loan.controller';
 
 const LoanRouter = Router();
@@ -52,6 +53,15 @@ LoanRouter.put(
         constants.USER.ROLES.ADMIN,
     ]),
     payLoanInstallment
+);
+
+LoanRouter.put(
+    applicationRoutes.loan.shiftLoanInstallment,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    shiftLoanInstallment
 );
 
 LoanRouter.get(

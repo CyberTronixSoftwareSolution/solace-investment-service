@@ -41,7 +41,12 @@ const searchPaymentByDueDate = async (dueDate: Date, collector: string) => {
     if (collector) {
         loanIds = (
             await LoanHeader.find({
-                status: WellKnownLoanStatus.RUNNING,
+                status: {
+                    $in: [
+                        WellKnownLoanStatus.RUNNING,
+                        WellKnownLoanStatus.COMPLETED,
+                    ],
+                },
                 recoverOfficer: collector,
             })
                 .select('_id')
@@ -50,7 +55,12 @@ const searchPaymentByDueDate = async (dueDate: Date, collector: string) => {
     } else {
         loanIds = (
             await LoanHeader.find({
-                status: WellKnownLoanStatus.RUNNING,
+                status: {
+                    $in: [
+                        WellKnownLoanStatus.RUNNING,
+                        WellKnownLoanStatus.COMPLETED,
+                    ],
+                },
             })
                 .select('_id')
                 .lean()
@@ -65,6 +75,7 @@ const searchPaymentByDueDate = async (dueDate: Date, collector: string) => {
             $in: [
                 WellKnownLoanPaymentStatus.PENDING,
                 WellKnownLoanPaymentStatus.PAID,
+                WellKnownLoanPaymentStatus.SHIFTED,
             ],
         },
     })
@@ -139,7 +150,10 @@ const searchPaymentReceiptByStartDateAndEndDate = async (
         loanHeader: { $in: loanIds },
         dueDate: { $gte: startDate, $lte: endDate },
         status: {
-            $in: [WellKnownLoanPaymentStatus.PAID],
+            $in: [
+                WellKnownLoanPaymentStatus.PAID,
+                WellKnownLoanPaymentStatus.SHIFTED,
+            ],
         },
     })
         .populate({

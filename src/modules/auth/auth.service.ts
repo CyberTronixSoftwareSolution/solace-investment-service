@@ -30,7 +30,9 @@ const findById = async (id: string) => {
 const findByUserId = async (userId: string) => {
     return await Auth.findOne({
         user: userId,
-        status: WellKnownStatus.ACTIVE,
+        status: {
+            $in: [WellKnownUserStatus.ACTIVE, WellKnownUserStatus.BLACKLISTED],
+        },
     });
 };
 

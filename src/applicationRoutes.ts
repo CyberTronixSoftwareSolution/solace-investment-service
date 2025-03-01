@@ -50,6 +50,7 @@ const applicationRoutes = {
         getLoanCode: '/getLoanCode',
         handOverLoan: '/handOverLoan/:id',
         payLoanInstallment: '/payInstallment/:id',
+        shiftLoanInstallment: '/shiftInstallment/:id',
         printReceipt: '/printReceipt/:id',
         searchReceiptBulk: '/searchReceiptBulk',
         searchReceipt: '/searchReceipt',

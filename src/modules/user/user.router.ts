@@ -28,15 +28,6 @@ UserRouter.post(
 );
 
 UserRouter.put(
-    applicationRoutes.user.update,
-    authMiddleware.authorize([
-        constants.USER.ROLES.SUPERADMIN,
-        constants.USER.ROLES.ADMIN,
-    ]),
-    updateUser
-);
-
-UserRouter.put(
     applicationRoutes.user.blacklistUser,
     authMiddleware.authorize([
         constants.USER.ROLES.SUPERADMIN,
@@ -52,6 +43,15 @@ UserRouter.put(
         constants.USER.ROLES.ADMIN,
     ]),
     whitelistUser
+);
+
+UserRouter.put(
+    applicationRoutes.user.update,
+    authMiddleware.authorize([
+        constants.USER.ROLES.SUPERADMIN,
+        constants.USER.ROLES.ADMIN,
+    ]),
+    updateUser
 );
 
 UserRouter.get(
