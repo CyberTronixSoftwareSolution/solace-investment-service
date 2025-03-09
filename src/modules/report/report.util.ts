@@ -12,7 +12,7 @@ const modelToRepaymentResponseDto = (model: any): RepaymentResponseDto => {
         balance:
             model?.loanHeader?.loanSummary?.agreedAmount -
             model?.loanHeader?.totalPaidAmount,
-        arrears: model?.openingBalance > 0 ? model?.openingBalance : 0,
+        arrears: model?.arrearsAmount || 0 ,
     };
 };
 

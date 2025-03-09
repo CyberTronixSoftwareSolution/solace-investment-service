@@ -223,12 +223,21 @@ const validateEmailNicForSaveAndUpdate = async (
     return [];
 };
 
-const findAllByRoleInForSearch = async (role: number[]) => {
-    return await User.find({
+const findAllByRoleInForSearch = async (role: number[], searchText: string) => {
+    const regexPattern = new RegExp(searchText, 'i');
+
+    let filter = {
         role: { $in: role },
-    })
+        $or: [
+            { fullName: { $regex: regexPattern } },
+            { nicNumber: { $regex: regexPattern } },
+            { customerCode: { $regex: regexPattern } },
+        ]
+    }
+
+    return await User.find(filter)
         .sort({ createdAt: -1 })
-        .select('_id fullName nicNumber role customerCode');
+        .select('_id fullName nicNumber role customerCode mobileNo1 mobileNo2');
 };
 
 export default {

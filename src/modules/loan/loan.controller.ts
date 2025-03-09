@@ -405,13 +405,13 @@ const searchBulkReceipt = async (req: Request, res: Response) => {
         let loanPaymentDetails: any[] = [];
         if (auth.role == constants.USER.ROLES.SUPERADMIN) {
             loanPaymentDetails = await loanDetailService.searchPaymentByDueDate(
-                body.transactionDate,
-                ''
+                '',
+                body
             );
         } else {
             loanPaymentDetails = await loanDetailService.searchPaymentByDueDate(
-                body.transactionDate,
-                auth?.id
+                auth?.id,
+                body
             );
         }
 
@@ -425,29 +425,6 @@ const searchBulkReceipt = async (req: Request, res: Response) => {
             response = response.filter(
                 (item) => item.productId == body.product
             );
-        }
-        // if body.searchType != to "-1" search by searchType
-
-        if (body.searchType != '-1') {
-            switch (body.searchType) {
-                case '1':
-                    response = response.filter((item) =>
-                        item.nicNumber.toLowerCase().includes(body.searchCode)
-                    );
-                    break;
-                case '2':
-                    response = response.filter((item) =>
-                        item.customerCode
-                            .toLowerCase()
-                            .includes(body.searchCode)
-                    );
-                    break;
-                case '3':
-                    response = response.filter((item) =>
-                        item.loanNo.toLowerCase().includes(body.searchCode)
-                    );
-                    break;
-            }
         }
 
         CommonResponse(res, true, StatusCodes.OK, '', response);

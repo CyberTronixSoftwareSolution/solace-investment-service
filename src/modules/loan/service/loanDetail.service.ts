@@ -34,68 +34,90 @@ const findAllByLoanHeaderId = async (loanHeaderId: any) => {
         .sort({ detailIndex: 1 });
 };
 
-const searchPaymentByDueDate = async (dueDate: Date, collector: string) => {
+const searchPaymentByDueDate = async (collector: string, body: any) => {
     // running status loanId
     let loanIds: string[] = [];
+    let filter: any = {
+        status: {
+            $in: [WellKnownLoanStatus.RUNNING],
+        },
+    };
 
     if (collector) {
-        loanIds = (
-            await LoanHeader.find({
-                status: {
-                    $in: [
-                        WellKnownLoanStatus.RUNNING,
-                        WellKnownLoanStatus.COMPLETED,
-                    ],
-                },
-                recoverOfficer: collector,
-            })
-                .select('_id')
-                .lean()
-        ).map((loan) => loan._id.toString());
-    } else {
-        loanIds = (
-            await LoanHeader.find({
-                status: {
-                    $in: [
-                        WellKnownLoanStatus.RUNNING,
-                        WellKnownLoanStatus.COMPLETED,
-                    ],
-                },
-            })
-                .select('_id')
-                .lean()
-        ).map((loan) => loan._id.toString());
+        filter.recoverOfficer = collector;
     }
 
-    // find loan details by loanId and dueDate and status pending
-    const loanDetails = await LoanDetail.find({
-        loanHeader: { $in: loanIds },
-        dueDate: dueDate,
-        status: {
-            $in: [
-                WellKnownLoanPaymentStatus.PENDING,
-                WellKnownLoanPaymentStatus.PAID,
-                WellKnownLoanPaymentStatus.SHIFTED,
-            ],
-        },
-    })
-        .populate({
-            path: 'loanHeader',
-            select: '_id loanNumber amount loanSummary totalPaidAmount termsCount',
-            populate: [
-                {
-                    path: 'product',
-                    select: '_id productName',
-                },
-                {
-                    path: 'borrower',
-                    select: '_id nicNumber customerCode title initial firstName lastName fullName',
-                },
-            ],
-        })
-        .lean();
+    if (body.searchType != '-1') {
+        switch (body.searchType) {
+            case '1':
+                filter['borrower.customerCode'] = {
+                    $regex: body.searchCode,
+                    $options: 'i',
+                };
+                break;
+            case '2':
+                filter['borrower.nicNumber'] = {
+                    $regex: body.searchCode,
+                    $options: 'i',
+                };
+                break;
+            case '3':
+                filter.loanNumber = { $regex: body.searchCode, $options: 'i' };
+                break;
+        }
+    }
 
-    return loanDetails;
+    loanIds = (
+        await LoanHeader.find(filter)
+            .populate({
+                path: 'borrower',
+                select: 'nicNumber customerCode',
+            })
+            .select('_id')
+            .lean()
+    ).map((loan) => loan._id.toString());
+
+    let result: any[] = [];
+
+    for (let i = 0; i < loanIds.length; i++) {
+        let loanDetails = await LoanDetail.find({
+            loanHeader: loanIds[i],
+            status: {
+                $in: [
+                    WellKnownLoanPaymentStatus.PENDING,
+                    WellKnownLoanPaymentStatus.PAID,
+                    WellKnownLoanPaymentStatus.SHIFTED,
+                ],
+            },
+        })
+            .sort({ detailIndex: 1 })
+            .populate({
+                path: 'loanHeader',
+                select: '_id loanNumber amount loanSummary totalPaidAmount termsCount',
+                populate: [
+                    {
+                        path: 'product',
+                        select: '_id productName',
+                    },
+                    {
+                        path: 'borrower',
+                        select: '_id nicNumber customerCode title initial firstName lastName fullName',
+                    },
+                ],
+            })
+            .lean();
+
+        // find first pending loan detail
+        let selectedLoanDetails = loanDetails.find((loanDetail) => {
+            return loanDetail.status == WellKnownLoanPaymentStatus.PENDING;
+        });
+
+        if (selectedLoanDetails) {
+            result.push(selectedLoanDetails);
+        }
+    }
+
+    return result;
 };
 
 const findLoanDetailByIdAndStatusIn = async (
@@ -113,6 +135,12 @@ const searchPaymentReceiptByStartDateAndEndDate = async (
     endDate: Date,
     collector: string
 ) => {
+    const startOfDay = new Date(startDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(endDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
     // running status loanId
     let loanIds: string[] = [];
 
@@ -148,7 +176,7 @@ const searchPaymentReceiptByStartDateAndEndDate = async (
     // find loan details by loanId and dueDate and status pending
     const loanDetails = await LoanDetail.find({
         loanHeader: { $in: loanIds },
-        dueDate: { $gte: startDate, $lte: endDate },
+        paymentDate: { $gte: startOfDay, $lte: endOfDay },
         status: {
             $in: [
                 WellKnownLoanPaymentStatus.PAID,

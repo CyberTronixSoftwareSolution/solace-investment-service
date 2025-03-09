@@ -48,6 +48,8 @@ const userModelToUserSearchResponse = (user: any): UserSearchResponseDto => {
         customerCode: user?.customerCode,
         nicNumber: user?.nicNumber,
         label: `${user?.customerCode} - ${user?.fullName}`,
+        labelForSearch: `${user?.customerCode} - ${user?.fullName} - ${user?.nicNumber}`,
+        mobileNos: `${user?.mobileNo1}${user?.mobileNo2 ? '/' + user?.mobileNo2 : ''}`,
     };
 };
 

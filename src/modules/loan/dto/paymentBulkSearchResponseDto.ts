@@ -1,6 +1,7 @@
 interface PaymentBulkSearchResponseDto {
     detailId: string;
     headerId: string;
+    deuDate: Date;
     // Customer
     customerId: string;
     customerName: string;

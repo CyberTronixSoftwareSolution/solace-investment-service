@@ -187,4 +187,19 @@ const LoanHeaderSchema = new mongoose.Schema(
     }
 );
 
+LoanHeaderSchema.index(
+    { status: 1, recoverOfficer: 1 },
+    { name: 'status_recoverOfficer_idx' }
+);
+LoanHeaderSchema.index(
+    { 'borrower.customerCode': 1 },
+    { name: 'borrower_customerCode_idx' }
+);
+LoanHeaderSchema.index(
+    { 'borrower.nicNumber': 1 },
+    { name: 'borrower_nicNumber_idx' }
+);
+LoanHeaderSchema.index({ loanNumber: 1 }, { name: 'loanNumber_idx' });
+LoanHeaderSchema.index({ status: 1, _id: 1 }, { name: 'status_loanId_idx' });
+
 export default mongoose.model('LoanHeader', LoanHeaderSchema);

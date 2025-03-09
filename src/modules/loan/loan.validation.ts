@@ -71,12 +71,6 @@ const loanHandOverSchema = Joi.object({
 });
 
 const receiptBulkSearchSchema = Joi.object({
-    transactionDate: Joi.date().required().messages({
-        'date.base': 'Transaction Date is invalid',
-        'date.empty': 'Transaction Date is required',
-        'date.required': 'Transaction Date is required',
-    }),
-
     product: Joi.string().required().messages({
         'object.base': 'Product is invalid',
         'object.empty': 'Product is required',

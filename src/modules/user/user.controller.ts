@@ -700,21 +700,21 @@ const searchParamsUser = async (req: Request, res: Response) => {
     if (type === 'customer') {
         let users = await userService.findAllByRoleInForSearch([
             constants.USER.ROLES.CUSTOMER,
-        ]);
+        ], searchName);
 
         response = userUtil.userModelsToUserSearchResponse(users);
     } else if (type === 'admin') {
         let users = await userService.findAllByRoleInForSearch([
             constants.USER.ROLES.ADMIN,
             constants.USER.ROLES.SUPERADMIN,
-        ]);
+        ], searchName);
 
         response = userUtil.userModelsToUserSearchResponse(users);
     }
 
-    response = response.filter((x: UserSearchResponse) =>
-        x.label.toLowerCase().includes(searchName)
-    );
+    // response = response.filter((x: UserSearchResponse) =>
+    //     x.labelForSearch.toLowerCase().includes(searchName)
+    // );
 
     CommonResponse(res, true, StatusCodes.OK, '', response);
 };

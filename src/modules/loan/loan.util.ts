@@ -111,6 +111,7 @@ const modelToPaymentBulkSearchResponseDto = (
     return {
         detailId: loan?._id,
         headerId: loan?.loanHeader?._id,
+        deuDate : loan?.dueDate,
         // Customer
         customerId: loan?.loanHeader?.borrower?._id,
         customerName: `${loan?.loanHeader?.borrower?.initial} ${loan?.loanHeader?.borrower?.firstName} ${loan?.loanHeader?.borrower?.lastName}`,

@@ -54,14 +54,36 @@ const getRepaymentReportData = async (
                 .lean();
 
             if (loanDetails.length > 0) {
+                let selectedLoanDetail: any = null;
                 for (let j = 0; j < loanDetails.length; j++) {
                     const loanDetail = loanDetails[j];
                     if (
                         loanDetail.status === WellKnownLoanPaymentStatus.PENDING
                     ) {
-                        response.push(loanDetail);
+                        // response.push(loanDetail);
+                        selectedLoanDetail = loanDetail;
                         break;
                     }
+                }
+
+                let today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let arrearsAmount = 0;
+                for (let j = 0; j < loanDetails.length; j++) {
+                    const loanDetail: any = loanDetails[j];
+
+                    if (
+                        loanDetail.dueDate < today &&
+                        loanDetail.status === WellKnownLoanPaymentStatus.PENDING
+                    ) {
+                        arrearsAmount +=
+                            loanDetail.openingBalance + loanDetail.installment;
+                    }
+                }
+
+                if (selectedLoanDetail) {
+                    selectedLoanDetail.arrearsAmount = arrearsAmount;
+                    response.push(selectedLoanDetail);
                 }
             }
         }

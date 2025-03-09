@@ -97,4 +97,19 @@ const LoanDetailSchema = new mongoose.Schema(
     }
 );
 
+// Adding indexes
+LoanDetailSchema.index(
+    { loanHeader: 1, status: 1 },
+    { name: 'loanHeader_status_idx' }
+);
+LoanDetailSchema.index(
+    { dueDate: 1, status: 1 },
+    { name: 'dueDate_status_idx' }
+);
+LoanDetailSchema.index(
+    { loanHeader: 1, status: 1, dueDate: 1 },
+    { name: 'loanHeader_status_dueDate_idx' }
+);
+LoanDetailSchema.index({ detailIndex: 1 }, { name: 'detailIndex_idx' });
+
 export default mongoose.model('LoanDetail', LoanDetailSchema);
