@@ -117,10 +117,6 @@ const getMonthlyCollection = async (year: number, month: number) => {
         startDate.setHours(0, 0, 0, 0);
         endDate.setHours(23, 59, 59, 999);
 
-        if (daysForMonth[i] == '2025-03-01') {
-            console.log(daysForMonth[i]);
-        }
-
         let loanDetails = await LoanDetail.find({
             paymentDate: { $gte: startDate, $lte: endDate },
             isActualPayment: true,
