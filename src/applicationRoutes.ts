@@ -61,6 +61,12 @@ const applicationRoutes = {
         repaymentReport: '/repaymentReport',
         deductionChargeReport: '/deductionChargeReport',
     },
+
+    dashboard: {
+        base: '/dashboard',
+        getStatistic: '/getStatistic',
+        getCollectionSummary: '/getCollectionSummary',
+    },
 };
 
 export default applicationRoutes;
