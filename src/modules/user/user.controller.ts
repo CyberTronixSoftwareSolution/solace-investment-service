@@ -599,7 +599,10 @@ const getAllUsers = async (req: Request, res: Response) => {
     let response: any[] = [];
     const userAuth: any = req.auth;
 
-    if (userAuth.role === constants.USER.ROLES.SUPERADMIN) {
+    if (
+        userAuth.role === constants.USER.ROLES.SUPERADMIN ||
+        userAuth.role === constants.USER.ROLES.ADMIN
+    ) {
         let users = await userService.findAllAndStatusIn([
             WellKnownUserStatus.ACTIVE,
             WellKnownUserStatus.BLACKLISTED,
@@ -611,16 +614,18 @@ const getAllUsers = async (req: Request, res: Response) => {
         if (users?.length > 0) {
             response = userUtil.userModelToUserResponseDtos(users);
         }
-    } else if (userAuth.role === constants.USER.ROLES.ADMIN) {
-        const users = await userService.findAllByCreatedUserAndStatusIn(
-            userAuth.id,
-            [WellKnownUserStatus.ACTIVE, WellKnownUserStatus.BLACKLISTED]
-        );
-
-        if (users?.length > 0) {
-            response = userUtil.userModelToUserResponseDtos(users);
-        }
     }
+
+    // else if (userAuth.role === constants.USER.ROLES.ADMIN) {
+    //     const users = await userService.findAllByCreatedUserAndStatusIn(
+    //         userAuth.id,
+    //         [WellKnownUserStatus.ACTIVE, WellKnownUserStatus.BLACKLISTED]
+    //     );
+
+    //     if (users?.length > 0) {
+    //         response = userUtil.userModelToUserResponseDtos(users);
+    //     }
+    // }
 
     CommonResponse(res, true, StatusCodes.OK, '', response);
 };
@@ -698,16 +703,17 @@ const searchParamsUser = async (req: Request, res: Response) => {
     let response: UserSearchResponse[] = [];
 
     if (type === 'customer') {
-        let users = await userService.findAllByRoleInForSearch([
-            constants.USER.ROLES.CUSTOMER,
-        ], searchName);
+        let users = await userService.findAllByRoleInForSearch(
+            [constants.USER.ROLES.CUSTOMER],
+            searchName
+        );
 
         response = userUtil.userModelsToUserSearchResponse(users);
     } else if (type === 'admin') {
-        let users = await userService.findAllByRoleInForSearch([
-            constants.USER.ROLES.ADMIN,
-            constants.USER.ROLES.SUPERADMIN,
-        ], searchName);
+        let users = await userService.findAllByRoleInForSearch(
+            [constants.USER.ROLES.ADMIN, constants.USER.ROLES.SUPERADMIN],
+            searchName
+        );
 
         response = userUtil.userModelsToUserSearchResponse(users);
     }
