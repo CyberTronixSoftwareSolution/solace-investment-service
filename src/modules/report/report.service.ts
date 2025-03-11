@@ -19,7 +19,7 @@ const getRepaymentReportData = async (
         query.product = product;
     }
     if (recoveryOfficer !== '' && recoveryOfficer != '-1') {
-        query.recoveryOfficer = recoveryOfficer;
+        query.recoverOfficer = recoveryOfficer;
     }
     if (collectionDate !== '' && collectionDate != '-1') {
         query.collectionDate = collectionDate;
@@ -113,7 +113,7 @@ const getDeductionChargeReportData = async (
     }
 
     if (recoveryOfficer !== '') {
-        query.recoveryOfficer = recoveryOfficer;
+        query.recoverOfficer = recoveryOfficer;
     }
 
     if (isDeductionChargesReducedFromLoan > 0) {
