@@ -5,6 +5,7 @@ import constants from '../../constant';
 import {
     getRepaymentReportData,
     getDeductionChargeReportData,
+    getInvestmentReportData,
 } from './report.controller';
 
 const ReportRouter = Router();
@@ -27,5 +28,11 @@ ReportRouter.post(
         constants.USER.ROLES.ADMIN,
     ]),
     getDeductionChargeReportData
+);
+
+ReportRouter.post(
+    applicationRoutes.report.investmentReport,
+    authMiddleware.authorize([constants.USER.ROLES.SUPERADMIN]),
+    getInvestmentReportData
 );
 export default ReportRouter;

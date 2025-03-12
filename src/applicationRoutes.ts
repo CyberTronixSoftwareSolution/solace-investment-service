@@ -60,6 +60,7 @@ const applicationRoutes = {
         base: '/report',
         repaymentReport: '/repaymentReport',
         deductionChargeReport: '/deductionChargeReport',
+        investmentReport: '/investmentReport',
     },
 
     dashboard: {

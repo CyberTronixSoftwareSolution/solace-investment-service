@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { WellKnownStatus } from '../../../util/enums/well-known-status.enum';
 import { WellKnownLoanStatus } from '../../../util/enums/well-known-loan-status.enum';
+import helperUtil from '../../../util/helper.util';
 
 const LoanHeaderSchema = new mongoose.Schema(
     {
@@ -41,16 +42,19 @@ const LoanHeaderSchema = new mongoose.Schema(
         rate: {
             type: Number,
             required: [true, 'Rate is required'],
+            set: helperUtil.roundToTwoDecimals,
         },
 
         rateAmount: {
             type: Number,
             default: 0,
+            set: helperUtil.roundToTwoDecimals,
         },
 
         amount: {
             type: Number,
             required: [true, 'Amount is required'],
+            set: helperUtil.roundToTwoDecimals,
         },
 
         termsCount: {
@@ -100,11 +104,13 @@ const LoanHeaderSchema = new mongoose.Schema(
                 rate: {
                     type: Number,
                     required: [true, 'Rate is required'],
+                    set: helperUtil.roundToTwoDecimals,
                 },
 
                 amount: {
                     type: Number,
                     required: [true, 'Amount is required'],
+                    set: helperUtil.roundToTwoDecimals,
                 },
             },
         ],
@@ -128,21 +134,31 @@ const LoanHeaderSchema = new mongoose.Schema(
             totalInterestAmount: {
                 type: Number,
                 default: 0,
+                set: helperUtil.roundToTwoDecimals,
             },
 
             agreedAmount: {
                 type: Number,
                 default: 0,
+                set: helperUtil.roundToTwoDecimals,
             },
 
             totalDeductionCharges: {
                 type: Number,
                 default: 0,
+                set: helperUtil.roundToTwoDecimals,
             },
 
             availableBalance: {
                 type: Number,
                 default: 0,
+                set: helperUtil.roundToTwoDecimals,
+            },
+
+            installmentPerTerm: {
+                type: Number,
+                default: 0,
+                set: helperUtil.roundToTwoDecimals,
             },
         },
 
@@ -163,6 +179,7 @@ const LoanHeaderSchema = new mongoose.Schema(
         totalPaidAmount: {
             type: Number,
             default: 0,
+            set: helperUtil.roundToTwoDecimals,
         },
 
         status: {

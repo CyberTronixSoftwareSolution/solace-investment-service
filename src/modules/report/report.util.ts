@@ -1,4 +1,5 @@
 import DeductionChargeResponseDto from './dto/deductionChargeResponseDto';
+import InvestmentReportDto from './dto/investmentReportDto';
 import RepaymentResponseDto from './dto/repaymentResponseDto';
 
 const modelToRepaymentResponseDto = (model: any): RepaymentResponseDto => {
@@ -12,7 +13,7 @@ const modelToRepaymentResponseDto = (model: any): RepaymentResponseDto => {
         balance:
             model?.loanHeader?.loanSummary?.agreedAmount -
             model?.loanHeader?.totalPaidAmount,
-        arrears: model?.arrearsAmount || 0 ,
+        arrears: model?.arrearsAmount || 0,
     };
 };
 
@@ -46,8 +47,30 @@ const modelToDeductionChargeResponseDto = (
     return response;
 };
 
+const modelToInvestmentResponseDto = (model: any): InvestmentReportDto[] => {
+    let response: InvestmentReportDto[] = [];
+    if (model?.loanDeductionCharges?.length > 0) {
+        model?.loanDeductionCharges?.forEach((deductionCharge: any) => {
+            response.push({
+                _id: model._id,
+                loanNo: model.loanNumber,
+                productName:
+                    model?.product?.productCode +
+                    ' - ' +
+                    model?.product?.productName,
+                transactionDate: model?.disbursementDate,
+                investment: model?.loanSummary?.totalInterestAmount,
+                loanAmount: model?.amount,
+            });
+        });
+    }
+
+    return response;
+};
+
 export default {
     modelToRepaymentResponseDto,
     modelsToRepaymentResponseDtos,
     modelToDeductionChargeResponseDto,
+    modelToInvestmentResponseDto,
 };

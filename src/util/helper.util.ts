@@ -32,10 +32,15 @@ const GetTodayDate = () => {
     new Date().toISOString().slice(0, 10);
 };
 
+export const roundToTwoDecimals = (value: number): number => {
+    return parseFloat(value.toFixed(2));
+};
+
 export default {
     getNameFromEnum,
     isValueInEnum,
     createCodes,
     getRoleName,
     GetTodayDate,
+    roundToTwoDecimals,
 };

@@ -83,6 +83,10 @@ const receiptBulkSearchSchema = Joi.object({
         'string.required': 'Search Type is required',
     }),
 
+    recoverOfficer: Joi.string().allow(null).allow('').messages({
+        'string.base': 'Recover Officer is invalid',
+    }),
+
     searchCode: Joi.string().allow(null).allow('').messages({
         'string.base': 'Search Code is invalid',
     }),
@@ -113,6 +117,10 @@ const receiptSearchSchema = Joi.object({
         'object.base': 'Product is invalid',
         'object.empty': 'Product is required',
         'object.required': 'Product is required',
+    }),
+
+    recoverOfficer: Joi.string().allow(null).allow('').messages({
+        'string.base': 'Recover Officer is invalid',
     }),
 
     searchType: Joi.string().required().messages({

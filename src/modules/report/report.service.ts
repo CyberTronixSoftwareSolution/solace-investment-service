@@ -157,4 +157,65 @@ const getDeductionChargeReportData = async (
     return loanHeaders;
 };
 
-export default { getRepaymentReportData, getDeductionChargeReportData };
+const getInvestmentReportData = async (
+    startDate: Date,
+    endDate: Date,
+    product: string,
+    recoveryOfficer: string,
+    searchType: number,
+    searchCode: string
+) => {
+    let query: any = {
+        disbursementDate: { $gte: startDate, $lte: endDate },
+        status: {
+            $in: [WellKnownLoanStatus.RUNNING, WellKnownLoanStatus.COMPLETED],
+        },
+    };
+
+    if (product !== '') {
+        query.product = product;
+    }
+
+    if (recoveryOfficer !== '') {
+        query.recoverOfficer = recoveryOfficer;
+    }
+
+    // searchType 1 = nic, 2= customercode, 3 = loan no
+    if (searchType > 0) {
+        let regexPattern = new RegExp(searchCode, 'i');
+        if (searchType === 1) {
+            const borrowers = await User.find({
+                nicNumber: { $regex: regexPattern },
+                role: constants.USER.ROLES.CUSTOMER,
+            }).select('_id');
+
+            query['borrower'] = { $in: borrowers.map((b) => b._id) };
+        } else if (searchType === 2) {
+            const borrowers = await User.find({
+                customerCode: { $regex: regexPattern },
+                role: constants.USER.ROLES.CUSTOMER,
+            }).select('_id');
+            query['borrower'] = { $in: borrowers.map((b) => b._id) };
+        } else if (searchType === 3) {
+            query['loanNumber'] = { $regex: regexPattern };
+        }
+    }
+
+    const loanHeaders = await LoanHeader.find(query)
+        .populate({
+            path: 'product',
+            select: '_id productName productCode',
+        })
+        .populate({
+            path: 'borrower',
+            select: '_id nicNumber customerCode title initial firstName lastName fullName mobileNo1',
+        })
+        .lean();
+
+    return loanHeaders;
+};
+export default {
+    getRepaymentReportData,
+    getDeductionChargeReportData,
+    getInvestmentReportData,
+};

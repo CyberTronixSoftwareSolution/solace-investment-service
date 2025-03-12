@@ -20,6 +20,7 @@ import PaymentBulkSearchResponseDto from './dto/paymentBulkSearchResponseDto';
 import { WellKnownLoanPaymentStatus } from '../../util/enums/well-known-loan-payment-status.enum';
 import userService from '../user/user.service';
 import PaymentSearchResponseDto from './dto/paymentSearchResponseDto';
+import helperUtil from '../../util/helper.util';
 
 const saveLoan = async (req: Request, res: Response) => {
     const body: any = req.body;
@@ -66,7 +67,9 @@ const saveLoan = async (req: Request, res: Response) => {
                 }
                 let amount = charge.rate;
                 if (charge.isPercentage) {
-                    amount = (product.amount / 100) * charge.rate;
+                    amount = helperUtil.roundToTwoDecimals(
+                        (product.amount / 100) * charge.rate
+                    );
                 }
 
                 charge.amount = amount;
@@ -96,16 +99,23 @@ const saveLoan = async (req: Request, res: Response) => {
             : new Date();
         dueDate.setHours(0, 0, 0, 0);
 
-        let interestPerTerm = totalInterest / product.termsCount;
-        let capital = product.amount / product.termsCount;
+        let interestPerTerm = helperUtil.roundToTwoDecimals(
+            totalInterest / product.termsCount
+        );
+        let capital = helperUtil.roundToTwoDecimals(
+            product.amount / product.termsCount
+        );
 
         let loanSummary = {
             totalInterestAmount: totalInterest,
-            agreedAmount: product.amount + totalInterest,
+            agreedAmount: helperUtil.roundToTwoDecimals(
+                product.amount + totalInterest
+            ),
             totalDeductionCharges: totalDeduction,
             availableBalance: body.isDeductionChargesReducedFromLoan
-                ? product.amount - totalDeduction
+                ? helperUtil.roundToTwoDecimals(product.amount - totalDeduction)
                 : product.amount,
+            installmentPerTerm: capital + interestPerTerm,
         };
 
         loanHeader.rateAmount = totalInterest;
@@ -130,7 +140,9 @@ const saveLoan = async (req: Request, res: Response) => {
             loanDetail.dueDate = dueDate;
             loanDetail.interest = interestPerTerm;
             loanDetail.capital = capital;
-            loanDetail.installment = capital + interestPerTerm;
+            loanDetail.installment = helperUtil.roundToTwoDecimals(
+                capital + interestPerTerm
+            );
             loanDetail.detailIndex = i;
             loanDetail.collectedBy = null;
             loanDetail.createdBy = auth.id;
@@ -341,13 +353,19 @@ const handOverLoan = async (req: Request, res: Response) => {
         // recalculate loan details
         let totalInterest: number = loanHeader.rate;
         if (loanHeader.isPercentage) {
-            totalInterest = (loanHeader.amount / 100) * loanHeader.rate;
+            totalInterest = helperUtil.roundToTwoDecimals(
+                (loanHeader.amount / 100) * loanHeader.rate
+            );
         }
 
         let dueDate = new Date(body.transactionDate);
 
-        let interestPerTerm = totalInterest / loanHeader.termsCount;
-        let capital = loanHeader.amount / loanHeader.termsCount;
+        let interestPerTerm = helperUtil.roundToTwoDecimals(
+            totalInterest / loanHeader.termsCount
+        );
+        let capital = helperUtil.roundToTwoDecimals(
+            loanHeader.amount / loanHeader.termsCount
+        );
 
         for (let i = 1; i <= loanHeader.termsCount; i++) {
             let loanDetail = new LoanDetail();
@@ -364,7 +382,9 @@ const handOverLoan = async (req: Request, res: Response) => {
             loanDetail.dueDate = dueDate;
             loanDetail.interest = interestPerTerm;
             loanDetail.capital = capital;
-            loanDetail.installment = capital + interestPerTerm;
+            loanDetail.installment = helperUtil.roundToTwoDecimals(
+                capital + interestPerTerm
+            );
             loanDetail.detailIndex = i;
             loanDetail.collectedBy = null;
             loanDetail.createdBy = auth.id;
@@ -405,7 +425,7 @@ const searchBulkReceipt = async (req: Request, res: Response) => {
         let loanPaymentDetails: any[] = [];
         if (auth.role == constants.USER.ROLES.SUPERADMIN) {
             loanPaymentDetails = await loanDetailService.searchPaymentByDueDate(
-                '',
+                body.recoverOfficer,
                 body
             );
         } else {
@@ -487,25 +507,26 @@ const payLoanInstallment = async (req: Request, res: Response) => {
         }
     }
 
-    let remainingBalance =
-        (loanHeader?.loanSummary?.agreedAmount || 0) -
-        loanHeader?.totalPaidAmount;
+    // let remainingBalance = helperUtil.roundToTwoDecimals(
+    //     (loanHeader?.loanSummary?.agreedAmount || 0) -
+    //         loanHeader?.totalPaidAmount
+    // );
 
     // 2. last installment payment amount should be equal to remaining balance
-    if (loanDetail.detailIndex == loanHeader.termsCount) {
-        if (remainingBalance != body.payedAmount) {
-            throw new BadRequestError(
-                `This is last installment so payment amount should be equal to remaining balance (Remaining Balance: ${remainingBalance})!`
-            );
-        }
-    }
+    // if (loanDetail.detailIndex == loanHeader.termsCount) {
+    //     if (remainingBalance != body.payedAmount) {
+    //         throw new BadRequestError(
+    //             `This is last installment so payment amount should be equal to remaining balance (Remaining Balance: ${remainingBalance})!`
+    //         );
+    //     }
+    // }
 
     // 3.  check remaining balance is greater than payed amount
-    if (remainingBalance < body.payedAmount) {
-        throw new BadRequestError(
-            `Payment amount should be less than loan remaining balance (Remaining Balance: ${remainingBalance})!`
-        );
-    }
+    // if (remainingBalance < body.payedAmount) {
+    //     throw new BadRequestError(
+    //         `Payment amount should be less than loan remaining balance (Remaining Balance: ${remainingBalance})!`
+    //     );
+    // }
 
     let workingDate = new Date();
     workingDate.setHours(0, 0, 0, 0);
@@ -532,15 +553,13 @@ const payLoanInstallment = async (req: Request, res: Response) => {
             let installmentAmount = 0;
             if (loanDetailData != null) {
                 if (counter == 1) {
-                    installmentAmount = parseFloat(
-                        (
-                            loanDetailData.installment +
+                    installmentAmount = helperUtil.roundToTwoDecimals(
+                        loanDetailData.installment +
                             loanDetailData.openingBalance
-                        ).toFixed(2)
                     );
                 } else {
-                    installmentAmount = parseFloat(
-                        loanDetailData.installment.toFixed(2)
+                    installmentAmount = helperUtil.roundToTwoDecimals(
+                        loanDetailData.installment
                     );
                 }
 
@@ -548,7 +567,9 @@ const payLoanInstallment = async (req: Request, res: Response) => {
                     // if payment amount == installment amount
                     // 1. update loan header payment total
                     // 2. update payment detail status to paid
-                    loanHeader.totalPaidAmount += paymentAmount;
+                    loanHeader.totalPaidAmount = helperUtil.roundToTwoDecimals(
+                        loanHeader.totalPaidAmount + paymentAmount
+                    );
                     loanHeader.updatedBy = auth.id;
 
                     if (loanDetail.detailIndex == loanHeader.termsCount) {
@@ -610,7 +631,9 @@ const payLoanInstallment = async (req: Request, res: Response) => {
 
                     if (nextLoanDetailData != null) {
                         nextLoanDetailData.openingBalance =
-                            installmentAmount - paymentAmount;
+                            helperUtil.roundToTwoDecimals(
+                                installmentAmount - paymentAmount
+                            );
                         nextLoanDetailData.updatedBy = auth.id;
 
                         await loanDetailService.save(
@@ -619,14 +642,18 @@ const payLoanInstallment = async (req: Request, res: Response) => {
                         );
                     }
 
-                    paymentAmount -= installmentAmount;
+                    paymentAmount = helperUtil.roundToTwoDecimals(
+                        paymentAmount - installmentAmount
+                    );
                     detailIndex += 1;
                     counter += 1;
                 } else if (paymentAmount < installmentAmount) {
                     // if payment amount < installment amount
                     // 1. update loan header payment total
                     // 2. update payment detail status to paid and update next installment start balance
-                    loanHeader.totalPaidAmount += paymentAmount;
+                    loanHeader.totalPaidAmount = helperUtil.roundToTwoDecimals(
+                        loanHeader.totalPaidAmount + paymentAmount
+                    );
                     loanHeader.updatedBy = auth.id;
 
                     await loanHeaderService.save(loanHeader, session);
@@ -655,7 +682,9 @@ const payLoanInstallment = async (req: Request, res: Response) => {
 
                         if (nextLoanDetailData != null) {
                             nextLoanDetailData.openingBalance =
-                                installmentAmount - paymentAmount;
+                                helperUtil.roundToTwoDecimals(
+                                    installmentAmount - paymentAmount
+                                );
                             nextLoanDetailData.updatedBy = auth.id;
 
                             await loanDetailService.save(
@@ -779,7 +808,7 @@ const searchReceipt = async (req: Request, res: Response) => {
                 await loanDetailService.searchPaymentReceiptByStartDateAndEndDate(
                     body.startDate,
                     body.endDate,
-                    ''
+                    body.recoverOfficer
                 );
         } else {
             loanReceipts =

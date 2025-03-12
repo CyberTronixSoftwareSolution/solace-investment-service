@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { WellKnownUserStatus } from '../../util/enums/well-known-user-status.enum';
 import { WellKnownStatus } from '../../util/enums/well-known-status.enum';
+import helperUtil from '../../util/helper.util';
 
 const productSchema = new mongoose.Schema(
     {
@@ -30,21 +31,25 @@ const productSchema = new mongoose.Schema(
         rateAmount: {
             type: Number,
             required: [true, 'Rate Amount is required'],
+            set: helperUtil.roundToTwoDecimals,
         },
 
         amount: {
             type: Number,
             required: [true, 'Amount is required'],
+            set: helperUtil.roundToTwoDecimals,
         },
 
         maxAmount: {
             type: Number,
             required: [true, 'Max Amount is required'],
+            set: helperUtil.roundToTwoDecimals,
         },
 
         minAmount: {
             type: Number,
             required: [true, 'Min Amount is required'],
+            set: helperUtil.roundToTwoDecimals,
         },
 
         termsCount: {
@@ -83,11 +88,13 @@ const productSchema = new mongoose.Schema(
                 rate: {
                     type: Number,
                     required: [true, 'Rate is required'],
+                    set: helperUtil.roundToTwoDecimals,
                 },
 
                 amount: {
                     type: Number,
                     required: [true, 'Amount is required'],
+                    set: helperUtil.roundToTwoDecimals,
                 },
             },
         ],

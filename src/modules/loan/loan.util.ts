@@ -111,7 +111,7 @@ const modelToPaymentBulkSearchResponseDto = (
     return {
         detailId: loan?._id,
         headerId: loan?.loanHeader?._id,
-        deuDate : loan?.dueDate,
+        deuDate: loan?.dueDate,
         // Customer
         customerId: loan?.loanHeader?.borrower?._id,
         customerName: `${loan?.loanHeader?.borrower?.initial} ${loan?.loanHeader?.borrower?.firstName} ${loan?.loanHeader?.borrower?.lastName}`,
@@ -127,8 +127,11 @@ const modelToPaymentBulkSearchResponseDto = (
                 : loan?.paymentAmount) || 0,
         loanAmount: loan?.loanHeader?.amount,
         loanBalance:
-            loan?.loanHeader?.loanSummary?.agreedAmount -
-            loan?.loanHeader?.totalPaidAmount,
+            loan?.loanHeader?.loanSummary?.installmentPerTerm *
+                loan?.loanHeader?.termsCount +
+                loan?.loanHeader?.totalPaidAmount || 0,
+        // loan?.loanHeader?.loanSummary?.agreedAmount -
+        // loan?.loanHeader?.totalPaidAmount,
         termInstallAmount:
             loan?.openingBalance > 0
                 ? loan?.installment + loan?.openingBalance

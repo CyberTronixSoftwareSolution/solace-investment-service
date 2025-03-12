@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { WellKnownLoanPaymentStatus } from '../../../util/enums/well-known-loan-payment-status.enum';
+import helperUtil from '../../../util/helper.util';
 
 const LoanDetailSchema = new mongoose.Schema(
     {
@@ -18,16 +19,19 @@ const LoanDetailSchema = new mongoose.Schema(
         interest: {
             type: Number,
             default: 0,
+            set: helperUtil.roundToTwoDecimals,
         },
 
         capital: {
             type: Number,
             default: 0,
+            set: helperUtil.roundToTwoDecimals,
         },
 
         installment: {
             type: Number,
             default: 0,
+            set: helperUtil.roundToTwoDecimals,
         },
 
         detailIndex: {
@@ -45,11 +49,13 @@ const LoanDetailSchema = new mongoose.Schema(
         openingBalance: {
             type: Number,
             default: 0,
+            set: helperUtil.roundToTwoDecimals,
         },
 
         closingBalance: {
             type: Number,
             default: 0,
+            set: helperUtil.roundToTwoDecimals,
         },
 
         paymentDate: {
@@ -59,6 +65,7 @@ const LoanDetailSchema = new mongoose.Schema(
         actualPaymentAmount: {
             type: Number,
             default: 0,
+            set: helperUtil.roundToTwoDecimals,
         },
 
         isActualPayment: {
@@ -69,6 +76,7 @@ const LoanDetailSchema = new mongoose.Schema(
         paymentAmount: {
             type: Number,
             default: 0,
+            set: helperUtil.roundToTwoDecimals,
         },
 
         receipt: {
