@@ -183,6 +183,7 @@ const searchPaymentReceiptByStartDateAndEndDate = async (
                 WellKnownLoanPaymentStatus.SHIFTED,
             ],
         },
+        isActualPayment: true,
     })
         .populate({
             path: 'loanHeader',

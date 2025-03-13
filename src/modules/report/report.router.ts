@@ -6,6 +6,7 @@ import {
     getRepaymentReportData,
     getDeductionChargeReportData,
     getInvestmentReportData,
+    getDailyManagerReportData,
 } from './report.controller';
 
 const ReportRouter = Router();
@@ -34,5 +35,11 @@ ReportRouter.post(
     applicationRoutes.report.investmentReport,
     authMiddleware.authorize([constants.USER.ROLES.SUPERADMIN]),
     getInvestmentReportData
+);
+
+ReportRouter.get(
+    applicationRoutes.report.dailyManagerReport,
+    authMiddleware.authorize([constants.USER.ROLES.SUPERADMIN]),
+    getDailyManagerReportData
 );
 export default ReportRouter;

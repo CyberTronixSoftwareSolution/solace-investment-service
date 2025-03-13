@@ -1,6 +1,10 @@
 import DeductionChargeResponseDto from './dto/deductionChargeResponseDto';
 import InvestmentReportDto from './dto/investmentReportDto';
+import NewlyAddLoansDto from './dto/newlyAddLoansDto';
 import RepaymentResponseDto from './dto/repaymentResponseDto';
+import TodayCollectionDto from './dto/todayCollectionDto';
+import TodayDeductionChargeResponseDto from './dto/todayDeductionChargeResponseDto';
+import TodayHandoverLoanDto from './dto/todayHandoverLoanDto';
 
 const modelToRepaymentResponseDto = (model: any): RepaymentResponseDto => {
     return {
@@ -68,9 +72,87 @@ const modelToInvestmentResponseDto = (model: any): InvestmentReportDto[] => {
     return response;
 };
 
+const modelToNewlyAddLoansDto = (model: any): NewlyAddLoansDto => {
+    return {
+        _id: model._id,
+        loanNo: model?.loanNumber,
+        product: model?.product?.productName,
+        borrower: `${model?.borrower?.customerCode} - ${model?.borrower?.title} ${model?.borrower?.fullName}`,
+        disturbanceDate: model?.disbursementDate,
+        addedBy: model?.createdBy?.firstName + ' ' + model?.createdBy?.lastName,
+        addedTime: model?.createdAt,
+        loanAmount: model.amount,
+        agreedAmount: model?.loanSummary?.agreedAmount,
+    };
+};
+
+const modelToNewlyAddLoansDtos = (models: any[]): NewlyAddLoansDto[] => {
+    return models.map((model) => modelToNewlyAddLoansDto(model));
+};
+
+const modelToTodayHandoverLoanDto = (model: any): TodayHandoverLoanDto => {
+    return {
+        _id: model._id,
+        loanNo: model?.loanNumber,
+        product: model?.product?.productName,
+        borrower: `${model?.borrower?.customerCode} - ${model?.borrower?.title} ${model?.borrower?.fullName}`,
+        disturbanceDate: model?.disbursementDate,
+        handoverBy:
+            model?.handOverBy?.firstName + ' ' + model?.handOverBy?.lastName,
+        remarks: model?.handOverRemark,
+        loanAmount: model.amount,
+        agreedAmount: model?.loanSummary?.agreedAmount,
+    };
+};
+
+const modelToTodayHandoverLoanDtos = (
+    models: any[]
+): TodayHandoverLoanDto[] => {
+    return models.map((model) => modelToTodayHandoverLoanDto(model));
+};
+
+const modelToTodayCollectionDto = (model: any): TodayCollectionDto => {
+    return {
+        _id: model._id,
+        loanNo: model?.loanHeader?.loanNumber,
+        product: model?.loanHeader?.product?.productName,
+        borrower: `${model?.loanHeader?.borrower?.customerCode} - ${model?.loanHeader?.borrower?.title} ${model?.loanHeader?.borrower?.fullName}`,
+        paymentTime: model?.updatedAt,
+        collector:
+            model?.collectedBy?.firstName + ' ' + model?.collectedBy?.lastName,
+        payedAmount: model?.actualPaymentAmount,
+        loanBalance: model?.balance,
+    };
+};
+
+const modelToTodayCollectionDtos = (models: any[]): TodayCollectionDto[] => {
+    return models.map((model) => modelToTodayCollectionDto(model));
+};
+
+const modelToTodayDeductionChargeResponseDto = (
+    header: any,
+    charge: any
+): TodayDeductionChargeResponseDto => {
+    return {
+        _id: header._id,
+        loanNo: header?.loanNumber,
+        product: header?.product?.productName,
+        borrower: `${header?.borrower?.customerCode} - ${header?.borrower?.title} ${header?.borrower?.fullName}`,
+        IsDeductFromLoan: header?.isDeductionChargesReducedFromLoan,
+        addedBy:
+            header?.createdBy?.firstName + ' ' + header?.createdBy?.lastName,
+        chargeName: charge?.deductionChargeName,
+        chargeAmount: charge?.amount,
+    };
+};
 export default {
     modelToRepaymentResponseDto,
     modelsToRepaymentResponseDtos,
     modelToDeductionChargeResponseDto,
     modelToInvestmentResponseDto,
+    modelToNewlyAddLoansDto,
+    modelToNewlyAddLoansDtos,
+    modelToTodayHandoverLoanDtos,
+    modelToTodayCollectionDtos,
+    modelToTodayDeductionChargeResponseDto,
 };

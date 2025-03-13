@@ -61,6 +61,7 @@ const applicationRoutes = {
         repaymentReport: '/repaymentReport',
         deductionChargeReport: '/deductionChargeReport',
         investmentReport: '/investmentReport',
+        dailyManagerReport: '/dailyManagerReport',
     },
 
     dashboard: {

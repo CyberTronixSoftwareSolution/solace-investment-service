@@ -614,6 +614,7 @@ const payLoanInstallment = async (req: Request, res: Response) => {
                     loanDetailData.actualPaymentAmount = actualPaymentAmount;
                     loanDetailData.receipt = receiptNo;
                     loanDetailData.updatedBy = auth.id;
+                    loanDetailData.collectedBy = auth.id;
 
                     if (counter == 1) {
                         loanDetailData.isActualPayment = true;

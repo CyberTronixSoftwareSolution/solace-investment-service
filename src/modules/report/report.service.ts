@@ -3,6 +3,7 @@ import { WellKnownLoanPaymentStatus } from '../../util/enums/well-known-loan-pay
 import { WellKnownLoanStatus } from '../../util/enums/well-known-loan-status.enum';
 import LoanDetail from '../loan/model/loanDetail.model';
 import LoanHeader from '../loan/model/loanHeader.model';
+import loanDetailService from '../loan/service/loanDetail.service';
 import User from '../user/user.model';
 
 const getRepaymentReportData = async (
@@ -214,8 +215,174 @@ const getInvestmentReportData = async (
 
     return loanHeaders;
 };
+
+const getNewlyAddLoansByDate = async (date: string) => {
+    let startDate = new Date(date);
+    let endDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    const loanHeaders = await LoanHeader.find({
+        createdAt: { $gte: startDate, $lte: endDate },
+        status: {
+            $in: [
+                WellKnownLoanStatus.RUNNING,
+                WellKnownLoanStatus.COMPLETED,
+                WellKnownLoanStatus.PENDING,
+            ],
+        },
+    })
+        .populate({
+            path: 'product',
+            select: '_id productName productCode',
+        })
+        .populate({
+            path: 'borrower',
+            select: '_id nicNumber customerCode title fullName',
+        })
+        .populate({
+            path: 'createdBy',
+            select: '_id customerCode firstName lastName',
+        })
+        .sort({ createdAt: -1 })
+        .lean();
+
+    return loanHeaders;
+};
+
+const getTodayHandOverLoans = async (date: string) => {
+    let startDate = new Date(date);
+    let endDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    const loanHeaders = await LoanHeader.find({
+        disbursementDate: { $gte: startDate, $lte: endDate },
+        status: {
+            $in: [WellKnownLoanStatus.RUNNING, WellKnownLoanStatus.COMPLETED],
+        },
+    })
+        .populate({
+            path: 'product',
+            select: '_id productName productCode',
+        })
+        .populate({
+            path: 'borrower',
+            select: '_id nicNumber customerCode title fullName',
+        })
+        .populate({
+            path: 'handOverBy',
+            select: '_id customerCode firstName lastName',
+        });
+
+    return loanHeaders;
+};
+
+const getTodayCollectionLoans = async (date: string) => {
+    let startDate = new Date(date);
+    let endDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    const loanDetails = await LoanDetail.find({
+        paymentDate: { $gte: startDate, $lte: endDate },
+        isActualPayment: true,
+        status: WellKnownLoanPaymentStatus.PAID,
+    })
+        .populate({
+            path: 'loanHeader',
+            select: '_id loanNumber amount loanSummary totalPaidAmount termsCount',
+            populate: [
+                {
+                    path: 'product',
+                    select: '_id productName productCode',
+                },
+                {
+                    path: 'borrower',
+                    select: '_id nicNumber customerCode title fullName',
+                },
+            ],
+        })
+        .populate({
+            path: 'collectedBy',
+            select: '_id customerCode firstName lastName',
+        })
+        .sort({ createdAt: -1 })
+        .lean();
+
+    let response: any[] = [];
+
+    if (loanDetails.length > 0) {
+        for (let i = 0; i < loanDetails.length; i++) {
+            const loanDetail: any = loanDetails[i];
+
+            let loanDetailsToCalc: any[] = await LoanDetail.find({
+                loanHeader: loanDetail.loanHeader._id.toString(),
+            })
+                .sort({ detailIndex: 1 })
+                .lean();
+
+            let outstandingAmount =
+                loanDetail?.loanHeader?.loanSummary?.agreedAmount || 0;
+            let totalPaidAmount = 0;
+            loanDetailsToCalc.forEach((item: any) => {
+                if (
+                    item.detailIndex <= loanDetail.detailIndex &&
+                    item.isActualPayment
+                ) {
+                    totalPaidAmount += item.actualPaymentAmount;
+                }
+            });
+
+            let balance = outstandingAmount - totalPaidAmount;
+            loanDetail.balance = balance;
+
+            response.push(loanDetail);
+        }
+    }
+
+    return response;
+};
+
+const getTodayDeductionChargeLoans = async (date: string) => {
+    let startDate = new Date(date);
+    let endDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    const loanHeaders = await LoanHeader.find({
+        transactionDate: { $gte: startDate, $lte: endDate },
+        status: {
+            $in: [
+                WellKnownLoanStatus.RUNNING,
+                WellKnownLoanStatus.COMPLETED,
+                WellKnownLoanStatus.PENDING,
+            ],
+        },
+    })
+        .populate({
+            path: 'product',
+            select: '_id productName productCode',
+        })
+        .populate({
+            path: 'borrower',
+            select: '_id nicNumber customerCode title fullName',
+        })
+        .populate({
+            path: 'createdBy',
+            select: '_id firstName lastName customerCode',
+        })
+        .lean();
+
+    return loanHeaders;
+};
+
 export default {
     getRepaymentReportData,
     getDeductionChargeReportData,
     getInvestmentReportData,
+    getNewlyAddLoansByDate,
+    getTodayHandOverLoans,
+    getTodayCollectionLoans,
+    getTodayDeductionChargeLoans,
 };
